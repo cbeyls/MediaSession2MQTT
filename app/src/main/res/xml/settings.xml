@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory android:title="@string/settings_general">
+        <SwitchPreference
+            android:defaultValue="true"
+            android:key="enabled"
+            android:title="@string/settings_enabled" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:dependency="enabled"
+        android:title="@string/settings_server_connection">
+        <ListPreference
+            android:defaultValue="4"
+            android:entries="@array/settings_protocol_version_entries"
+            android:entryValues="@array/settings_protocol_version_values"
+            android:key="protocol_version"
+            android:title="@string/settings_protocol_version" />
+        <EditTextPreference
+            android:inputType="textNoSuggestions"
+            android:key="hostname"
+            android:title="@string/settings_hostname" />
+        <EditTextPreference
+            android:defaultValue="1883"
+            android:inputType="number"
+            android:key="port"
+            android:title="@string/settings_port" />
+        <EditTextPreference
+            android:inputType="textNoSuggestions"
+            android:key="username"
+            android:title="@string/settings_username" />
+        <EditTextPreference
+            android:inputType="textPassword"
+            android:key="password"
+            android:title="@string/settings_password" />
+        <Preference
+            android:key="test_connection"
+            android:title="@string/settings_test_connection" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/settings_messages">
+        <ListPreference
+            android:defaultValue="0"
+            android:entries="@array/settings_qos_level_entries"
+            android:entryValues="@array/settings_qos_level_values"
+            android:key="qos_level"
+            android:title="@string/settings_qos_level" />
+        <EditTextPreference
+            android:defaultValue="1"
+            android:inputType="number"
+            android:key="device_id"
+            android:title="@string/settings_device_id" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/settings_info">
+        <Preference
+            android:key="status"
+            android:title="@string/settings_status" />
+        <Preference
+            android:key="open_notification_listener_settings"
+            android:title="@string/settings_open_notification_listener_settings" />
+        <Preference
+            android:key="version"
+            android:title="@string/settings_version" />
+    </PreferenceCategory>
+
+</PreferenceScreen>

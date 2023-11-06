@@ -1,0 +1,56 @@
+<resources>
+    <string name="app_name">MediaSession2MQTT</string>
+    <string name="settings_title">MediaSession2MQTT Settings</string>
+
+    <string name="settings_general">General</string>
+    <string name="settings_enabled">Enabled</string>
+
+    <string name="settings_server_connection">MQTT server connection</string>
+    <string name="settings_protocol_version">Protocol version</string>
+    <string-array name="settings_protocol_version_entries">
+        <item>3.1.1</item>
+        <item>5</item>
+    </string-array>
+    <string-array name="settings_protocol_version_values">
+        <item>4</item>
+        <item>5</item>
+    </string-array>
+    <string name="settings_hostname">Host name or IP address</string>
+    <string name="settings_port">Port</string>
+    <string name="settings_username">Username</string>
+    <string name="settings_password">Password</string>
+    <string name="settings_test_connection">Test connection</string>
+
+    <string name="settings_messages">Messages</string>
+    <string name="settings_qos_level">QoS level</string>
+    <string-array name="settings_qos_level_entries">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
+    <string-array name="settings_qos_level_values">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
+    <string name="settings_device_id">Device id</string>
+
+    <string name="settings_info">Info</string>
+    <string name="settings_status">Status</string>
+    <string name="settings_open_notification_listener_settings">Open system notification access settings</string>
+    <string name="settings_version">Version</string>
+
+    <string name="unset">(unset)</string>
+
+    <string name="connection_test_invalid_settings">Incomplete or invalid settings</string>
+    <string name="connection_test_failure_message">Connection failure.\n%1$s</string>
+    <string name="connection_test_failure_generic">Connection failure.\nCheck parameters and connectivity.</string>
+    <string name="connection_test_success">Connection success!</string>
+
+    <string name="status_listening">Actively listening to MediaSessions\n</string>
+    <string name="status_not_listening">Unable to listen to MediaSessions</string>
+    <string name="status_no_current_mediasession">Nothing in progress</string>
+    <string name="status_current_mediasession">In progress: %1$s</string>
+
+    <string name="error_notification_listener_settings_activity_not_found">System notification access settings screen not found.\nPlease manually allow MediaSession2MQTT to access notifications using ADB.</string>
+</resources>
