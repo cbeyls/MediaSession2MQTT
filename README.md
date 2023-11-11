@@ -90,7 +90,7 @@ This application is designed to only push state messages and not listen to MQTT 
 The application publishes the following 3 topics to the MQTT broker (replace `{deviceId}` with your actual device id which is `1` by default):
 
 ### mediaSession/{deviceId}/playbackState
-The current playback state of the player connected to the current MediaSession, if any. Can be one of the following values: `ìdle`, `playing`, `paused`.
+The current playback state of the player connected to the current MediaSession, if any. Can be one of the following values: `idle`, `playing`, `paused`.
 
 Note that the `buffering` state is intentionally not supported for the following reasons:
 - Since buffering can happen at any time, adding this state makes it harder to detect transitions to and from the `playing` state;
