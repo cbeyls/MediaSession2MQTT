@@ -51,6 +51,9 @@ android {
             }
         }
     }
+    buildFeatures {
+        buildConfig = true
+    }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
@@ -63,7 +66,7 @@ android {
 }
 
 dependencies {
-    val daggerVersion = "2.48.1"
+    val daggerVersion = "2.49"
     val kmqttVersion = "0.4.3"
 
     implementation("com.google.dagger:dagger:$daggerVersion")
