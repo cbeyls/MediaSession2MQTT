@@ -21,5 +21,5 @@
 
 # KMQTT: unused WebSocket protocol
 -assumevalues class MQTTClient {
-  boolean webSocket return false;
+  java.lang.String webSocket return null;
 }

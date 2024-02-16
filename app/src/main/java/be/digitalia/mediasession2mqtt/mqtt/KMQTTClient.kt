@@ -32,7 +32,7 @@ class KMQTTClient(
             port = connectionSettings.port,
             tls = null,
             keepAlive = 0,
-            webSocket = false,
+            webSocket = null,
             userName = username,
             password = password
         ) { }

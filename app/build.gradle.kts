@@ -67,11 +67,11 @@ android {
 
 dependencies {
     val daggerVersion = "2.50"
-    val kmqttVersion = "0.4.4"
+    val kmqttVersion = "0.4.5"
 
     implementation("com.google.dagger:dagger:$daggerVersion")
     ksp("com.google.dagger:dagger-compiler:$daggerVersion")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
     implementation("io.github.davidepianca98:kmqtt-common-jvm:$kmqttVersion")
     implementation("io.github.davidepianca98:kmqtt-client-jvm:$kmqttVersion")
 }
