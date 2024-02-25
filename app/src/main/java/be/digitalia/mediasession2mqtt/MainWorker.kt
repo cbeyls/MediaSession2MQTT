@@ -1,5 +1,6 @@
 package be.digitalia.mediasession2mqtt
 
+import android.os.Build
 import be.digitalia.mediasession2mqtt.mediasession.CurrentMediaControllerDetector
 import be.digitalia.mediasession2mqtt.mediasession.metadataFlow
 import be.digitalia.mediasession2mqtt.mediasession.playbackStateFlow
@@ -24,6 +25,10 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.launch
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
 import javax.inject.Inject
 
 class MainWorker @Inject constructor(
@@ -79,12 +84,70 @@ class MainWorker @Inject constructor(
         }
     }
 
+    private suspend fun publishHassConfiguration(
+        client: MQTTPublishClient,
+        qosLevel: MQTTQoSLevel,
+        deviceId: Int
+    ) {
+        // Using as a unique identifier, but this may not be available on all devices.
+        val serialNumber = Build.SERIAL
+
+        @Serializable
+        data class DeviceInfo(
+            @EncodeDefault val name: String = "MediaSession2MQTT",
+            @EncodeDefault val manufacturer: String = Build.MANUFACTURER,
+            @EncodeDefault val model: String = Build.MODEL,
+            // Passing serialNumber in as a variable causes build fail: "Exception during IR lowering"
+            @EncodeDefault val identifiers: List<String> = listOf(Build.SERIAL),
+            @EncodeDefault val serial_number: String = Build.SERIAL
+        )
+
+        @Serializable
+        data class Sensor(
+            val name: String,
+            val state_topic: String,
+            val unique_id: String,
+            val device: DeviceInfo
+        )
+
+        // TODO: using a data class for storing sensor metadata would be nicer and let us configure
+        //  icons etc. but this suffices for a proof-of-concept.
+        val sensors = mapOf(
+            "Application ID" to "$APPLICATION_ID_SUB_TOPIC",
+            "Playback state" to "$PLAYBACK_STATE_SUB_TOPIC",
+            "Media title" to "$MEDIA_TITLE_SUB_TOPIC"
+        )
+
+        val deviceInfo = DeviceInfo()
+
+        sensors.forEach { (name, topic) ->
+            val serializedName = name.lowercase().replace(" ", "_")
+            val uniqueId = "mediaSession_${serialNumber}_${serializedName}"
+
+            val sensor = Sensor(
+                name,
+                "$ROOT_TOPIC/$deviceId/$topic",
+                uniqueId,
+                deviceInfo
+            )
+
+            val discoveryConfig = Json.encodeToString(sensor)
+            client.tryConnectAndPublish(
+                qosLevel,
+                "homeassistant/sensor/$deviceId/$serializedName/config",
+                discoveryConfig
+            )
+        }
+    }
+
     private suspend fun publishApplicationId(
         client: MQTTPublishClient,
         qosLevel: MQTTQoSLevel,
         deviceId: Int
     ) {
         applicationIdFlow.collect { applicationId ->
+            // Configuration only changes if the application id changes, so this is probably fine?
+            publishHassConfiguration(client, qosLevel, deviceId)
             client.tryConnectAndPublish(
                 qosLevel,
                 "$ROOT_TOPIC/$deviceId/$APPLICATION_ID_SUB_TOPIC",
