@@ -71,6 +71,7 @@ class MainWorker @Inject constructor(
                 val client = mqttClientFactory.create(connectionSettings)
                 try {
                     settingsProvider.messageSettings.collectLatest { (qosLevel, deviceId) ->
+                        publishHassConfiguration(client, qosLevel, deviceId)
                         coroutineScope {
                             launch { publishApplicationId(client, qosLevel, deviceId) }
                             launch { publishPlaybackState(client, qosLevel, deviceId) }
@@ -89,17 +90,13 @@ class MainWorker @Inject constructor(
         qosLevel: MQTTQoSLevel,
         deviceId: Int
     ) {
-        // Using as a unique identifier, but this may not be available on all devices.
-        val serialNumber = Build.SERIAL
 
         @Serializable
         data class DeviceInfo(
-            @EncodeDefault val name: String = "MediaSession2MQTT",
-            @EncodeDefault val manufacturer: String = Build.MANUFACTURER,
-            @EncodeDefault val model: String = Build.MODEL,
-            // Passing serialNumber in as a variable causes build fail: "Exception during IR lowering"
-            @EncodeDefault val identifiers: List<String> = listOf(Build.SERIAL),
-            @EncodeDefault val serial_number: String = Build.SERIAL
+            val name: String,
+            val manufacturer: String,
+            val model: String,
+            val identifiers: List<String>,
         )
 
         @Serializable
@@ -110,25 +107,30 @@ class MainWorker @Inject constructor(
             val device: DeviceInfo
         )
 
-        // TODO: using a data class for storing sensor metadata would be nicer and let us configure
-        //  icons etc. but this suffices for a proof-of-concept.
-        val sensors = mapOf(
-            "Application ID" to "$APPLICATION_ID_SUB_TOPIC",
-            "Playback state" to "$PLAYBACK_STATE_SUB_TOPIC",
-            "Media title" to "$MEDIA_TITLE_SUB_TOPIC"
+
+        val deviceInfo = DeviceInfo(
+            name = "MediaSession2MQTT",
+            manufacturer = Build.MANUFACTURER,
+            model = Build.MODEL,
+            identifiers = listOf(deviceId.toString())
         )
 
-        val deviceInfo = DeviceInfo()
+
+        val sensors = listOf(
+            Pair("Application ID", "$APPLICATION_ID_SUB_TOPIC"),
+            Pair("Playback state", "$PLAYBACK_STATE_SUB_TOPIC"),
+            Pair("Media title", "$MEDIA_TITLE_SUB_TOPIC"),
+        )
 
         sensors.forEach { (name, topic) ->
-            val serializedName = name.lowercase().replace(" ", "_")
-            val uniqueId = "mediaSession_${serialNumber}_${serializedName}"
+            val serializedName = name.lowercase().replace(' ', '_')
+            val uniqueId = "mediaSession_${serializedName}"
 
             val sensor = Sensor(
-                name,
-                "$ROOT_TOPIC/$deviceId/$topic",
-                uniqueId,
-                deviceInfo
+                name = name,
+                state_topic = "$ROOT_TOPIC/$deviceId/$topic",
+                unique_id = uniqueId,
+                device = deviceInfo
             )
 
             val discoveryConfig = Json.encodeToString(sensor)
@@ -146,8 +148,6 @@ class MainWorker @Inject constructor(
         deviceId: Int
     ) {
         applicationIdFlow.collect { applicationId ->
-            // Configuration only changes if the application id changes, so this is probably fine?
-            publishHassConfiguration(client, qosLevel, deviceId)
             client.tryConnectAndPublish(
                 qosLevel,
                 "$ROOT_TOPIC/$deviceId/$APPLICATION_ID_SUB_TOPIC",
