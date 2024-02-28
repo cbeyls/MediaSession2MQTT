@@ -66,8 +66,8 @@ android {
 }
 
 dependencies {
-    val daggerVersion = "2.50"
-    val kmqttVersion = "0.4.5"
+    val daggerVersion = "2.51"
+    val kmqttVersion = "0.4.6"
 
     implementation("com.google.dagger:dagger:$daggerVersion")
     ksp("com.google.dagger:dagger-compiler:$daggerVersion")
