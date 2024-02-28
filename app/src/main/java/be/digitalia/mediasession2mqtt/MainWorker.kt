@@ -107,7 +107,6 @@ class MainWorker @Inject constructor(
             val device: DeviceInfo
         )
 
-
         val deviceInfo = DeviceInfo(
             name = "MediaSession2MQTT",
             manufacturer = Build.MANUFACTURER,
@@ -117,14 +116,14 @@ class MainWorker @Inject constructor(
 
 
         val sensors = listOf(
-            Pair("Application ID", "$APPLICATION_ID_SUB_TOPIC"),
-            Pair("Playback state", "$PLAYBACK_STATE_SUB_TOPIC"),
-            Pair("Media title", "$MEDIA_TITLE_SUB_TOPIC"),
+            "Application ID" to APPLICATION_ID_SUB_TOPIC,
+            "Playback state" to PLAYBACK_STATE_SUB_TOPIC,
+            "Media title" to MEDIA_TITLE_SUB_TOPIC,
         )
 
         sensors.forEach { (name, topic) ->
             val serializedName = name.lowercase().replace(' ', '_')
-            val uniqueId = "mediaSession_${serializedName}"
+            val uniqueId = "mediaSession_${deviceId}_${serializedName}"
 
             val sensor = Sensor(
                 name = name,
