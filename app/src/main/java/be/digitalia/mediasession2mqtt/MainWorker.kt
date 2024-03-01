@@ -111,9 +111,8 @@ class MainWorker @Inject constructor(
             name = "MediaSession2MQTT",
             manufacturer = Build.MANUFACTURER,
             model = Build.MODEL,
-            identifiers = listOf(deviceId.toString())
+            identifiers = listOf("MediaSession2MQTT_$deviceId")
         )
-
 
         val sensors = listOf(
             "Application ID" to APPLICATION_ID_SUB_TOPIC,
