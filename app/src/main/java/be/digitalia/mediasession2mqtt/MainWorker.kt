@@ -1,5 +1,6 @@
 package be.digitalia.mediasession2mqtt
 
+import android.os.Build
 import be.digitalia.mediasession2mqtt.mediasession.CurrentMediaControllerDetector
 import be.digitalia.mediasession2mqtt.mediasession.metadataFlow
 import be.digitalia.mediasession2mqtt.mediasession.playbackStateFlow
@@ -24,6 +25,10 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.launch
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
 import javax.inject.Inject
 
 class MainWorker @Inject constructor(
@@ -66,6 +71,7 @@ class MainWorker @Inject constructor(
                 val client = mqttClientFactory.create(connectionSettings)
                 try {
                     settingsProvider.messageSettings.collectLatest { (qosLevel, deviceId) ->
+                        publishHassConfiguration(client, qosLevel, deviceId)
                         coroutineScope {
                             launch { publishApplicationId(client, qosLevel, deviceId) }
                             launch { publishPlaybackState(client, qosLevel, deviceId) }
@@ -76,6 +82,61 @@ class MainWorker @Inject constructor(
                     client.disconnectQuietly()
                 }
             }
+        }
+    }
+
+    private suspend fun publishHassConfiguration(
+        client: MQTTPublishClient,
+        qosLevel: MQTTQoSLevel,
+        deviceId: Int
+    ) {
+
+        @Serializable
+        data class DeviceInfo(
+            val name: String,
+            val manufacturer: String,
+            val model: String,
+            val identifiers: List<String>,
+        )
+
+        @Serializable
+        data class Sensor(
+            val name: String,
+            val state_topic: String,
+            val unique_id: String,
+            val device: DeviceInfo
+        )
+
+        val deviceInfo = DeviceInfo(
+            name = "MediaSession2MQTT",
+            manufacturer = Build.MANUFACTURER,
+            model = Build.MODEL,
+            identifiers = listOf("MediaSession2MQTT_$deviceId")
+        )
+
+        val sensors = listOf(
+            "Application ID" to APPLICATION_ID_SUB_TOPIC,
+            "Playback state" to PLAYBACK_STATE_SUB_TOPIC,
+            "Media title" to MEDIA_TITLE_SUB_TOPIC,
+        )
+
+        sensors.forEach { (name, topic) ->
+            val serializedName = name.lowercase().replace(' ', '_')
+            val uniqueId = "mediaSession_${deviceId}_${serializedName}"
+
+            val sensor = Sensor(
+                name = name,
+                state_topic = "$ROOT_TOPIC/$deviceId/$topic",
+                unique_id = uniqueId,
+                device = deviceInfo
+            )
+
+            val discoveryConfig = Json.encodeToString(sensor)
+            client.tryConnectAndPublish(
+                qosLevel,
+                "homeassistant/sensor/$deviceId/$serializedName/config",
+                discoveryConfig
+            )
         }
     }
 
