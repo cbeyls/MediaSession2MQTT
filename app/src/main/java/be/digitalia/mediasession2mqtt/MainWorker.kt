@@ -1,6 +1,7 @@
 package be.digitalia.mediasession2mqtt
 
-import android.os.Build
+import be.digitalia.mediasession2mqtt.homeassistant.Sensor
+import be.digitalia.mediasession2mqtt.homeassistant.createSensorDiscoveryConfiguration
 import be.digitalia.mediasession2mqtt.mediasession.CurrentMediaControllerDetector
 import be.digitalia.mediasession2mqtt.mediasession.metadataFlow
 import be.digitalia.mediasession2mqtt.mediasession.playbackStateFlow
@@ -25,10 +26,6 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.launch
-import kotlinx.serialization.EncodeDefault
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
 import javax.inject.Inject
 
 class MainWorker @Inject constructor(
@@ -71,8 +68,8 @@ class MainWorker @Inject constructor(
                 val client = mqttClientFactory.create(connectionSettings)
                 try {
                     settingsProvider.messageSettings.collectLatest { (qosLevel, deviceId) ->
-                        publishHassConfiguration(client, qosLevel, deviceId)
                         coroutineScope {
+                            launch { publishHassConfigurationIfEnabled(client, qosLevel, deviceId) }
                             launch { publishApplicationId(client, qosLevel, deviceId) }
                             launch { publishPlaybackState(client, qosLevel, deviceId) }
                             launch { publishMediaTitle(client, qosLevel, deviceId) }
@@ -85,58 +82,26 @@ class MainWorker @Inject constructor(
         }
     }
 
-    private suspend fun publishHassConfiguration(
+    private suspend fun publishHassConfigurationIfEnabled(
         client: MQTTPublishClient,
         qosLevel: MQTTQoSLevel,
         deviceId: Int
     ) {
-
-        @Serializable
-        data class DeviceInfo(
-            val name: String,
-            val manufacturer: String,
-            val model: String,
-            val identifiers: List<String>,
-        )
-
-        @Serializable
-        data class Sensor(
-            val name: String,
-            val state_topic: String,
-            val unique_id: String,
-            val device: DeviceInfo
-        )
-
-        val deviceInfo = DeviceInfo(
-            name = "MediaSession2MQTT",
-            manufacturer = Build.MANUFACTURER,
-            model = Build.MODEL,
-            identifiers = listOf("MediaSession2MQTT_$deviceId")
-        )
-
-        val sensors = listOf(
-            "Application ID" to APPLICATION_ID_SUB_TOPIC,
-            "Playback state" to PLAYBACK_STATE_SUB_TOPIC,
-            "Media title" to MEDIA_TITLE_SUB_TOPIC,
-        )
-
-        sensors.forEach { (name, topic) ->
-            val serializedName = name.lowercase().replace(' ', '_')
-            val uniqueId = "mediaSession_${deviceId}_${serializedName}"
-
-            val sensor = Sensor(
-                name = name,
-                state_topic = "$ROOT_TOPIC/$deviceId/$topic",
-                unique_id = uniqueId,
-                device = deviceInfo
-            )
-
-            val discoveryConfig = Json.encodeToString(sensor)
-            client.tryConnectAndPublish(
-                qosLevel,
-                "homeassistant/sensor/$deviceId/$serializedName/config",
-                discoveryConfig
-            )
+        settingsProvider.isHassIntegrationEnabled.collectLatest { isEnabled ->
+            if (isEnabled) {
+                for (sensor in HASS_SENSORS) {
+                    val discoveryConfig = createSensorDiscoveryConfiguration(
+                        deviceId = deviceId,
+                        sensor = sensor,
+                        sensorTopic = "$ROOT_TOPIC/$deviceId/${sensor.subTopic}"
+                    )
+                    client.tryConnectAndPublish(
+                        qosLevel,
+                        "$HASS_ROOT_TOPIC/${sensor.type}/${sensor.getUniqueId(deviceId)}/config",
+                        discoveryConfig
+                    )
+                }
+            }
         }
     }
 
@@ -193,5 +158,27 @@ class MainWorker @Inject constructor(
         private const val APPLICATION_ID_SUB_TOPIC = "applicationId"
         private const val PLAYBACK_STATE_SUB_TOPIC = "playbackState"
         private const val MEDIA_TITLE_SUB_TOPIC = "mediaTitle"
+
+        private const val HASS_ROOT_TOPIC = "homeassistant"
+        private val HASS_SENSORS = listOf(
+            Sensor(
+                name = "Playback State",
+                serializedName = "playback_state",
+                icon = "mdi:play-pause",
+                subTopic = PLAYBACK_STATE_SUB_TOPIC
+            ),
+            Sensor(
+                name = "Application Id",
+                serializedName = "application_id",
+                icon = "mdi:application",
+                subTopic = APPLICATION_ID_SUB_TOPIC
+            ),
+            Sensor(
+                name = "Media Title",
+                serializedName = "media_title",
+                icon = "mdi:information",
+                subTopic = MEDIA_TITLE_SUB_TOPIC
+            )
+        )
     }
 }

@@ -69,6 +69,10 @@ class SettingsProvider @Inject constructor(context: Context) {
             }
         }, { connectionSettings }).distinctUntilChanged()
 
+    val isHassIntegrationEnabled: Flow<Boolean>
+        get() = sharedPreferences.getAsFlow({ key -> key == PreferenceKeys.HASS_INTEGRATION_ENABLED },
+            { getBoolean(PreferenceKeys.HASS_INTEGRATION_ENABLED, false) })
+
     val messageSettings: Flow<MessageSettings>
         get() = sharedPreferences.getAsFlow({ key -> key == PreferenceKeys.DEVICE_ID || key == PreferenceKeys.QOS_LEVEL },
             { messageSettings }).distinctUntilChanged()

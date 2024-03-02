@@ -4,6 +4,8 @@
 
     <string name="settings_general">General</string>
     <string name="settings_enabled">Enabled</string>
+    <string name="settings_hass_integration_enabled">Enable Home Assistant integration</string>
+    <string name="settings_hass_integration_enabled_summary">Publish MQTT Discovery configuration</string>
 
     <string name="settings_server_connection">MQTT server connection</string>
     <string name="settings_protocol_version">Protocol version</string>

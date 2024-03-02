@@ -2,6 +2,7 @@ package be.digitalia.mediasession2mqtt.settings
 
 object PreferenceKeys {
     const val ENABLED = "enabled"
+    const val HASS_INTEGRATION_ENABLED = "hass_integration_enabled"
 
     const val PROTOCOL_VERSION = "protocol_version"
     const val HOSTNAME = "hostname"

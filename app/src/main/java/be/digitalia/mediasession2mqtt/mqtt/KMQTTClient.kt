@@ -80,7 +80,6 @@ class KMQTTClient(
         }
     }
 
-    @OptIn(ExperimentalUnsignedTypes::class)
     class Factory(private val dispatcher: CoroutineDispatcher) : MQTTPublishClient.Factory {
         override fun create(connectionSettings: MQTTConnectionSettings): MQTTPublishClient {
             return KMQTTClient(connectionSettings, dispatcher)

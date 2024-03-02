@@ -6,6 +6,12 @@
             android:defaultValue="true"
             android:key="enabled"
             android:title="@string/settings_enabled" />
+        <SwitchPreference
+            android:defaultValue="false"
+            android:dependency="enabled"
+            android:key="hass_integration_enabled"
+            android:summary="@string/settings_hass_integration_enabled_summary"
+            android:title="@string/settings_hass_integration_enabled" />
     </PreferenceCategory>
 
     <PreferenceCategory
