@@ -12,8 +12,8 @@ android {
         applicationId = "be.digitalia.mediasession2mqtt"
         minSdk = 22
         targetSdk = 34
-        versionCode = 2100100
-        versionName = "1.0.0"
+        versionCode = 2100110
+        versionName = "1.1.0"
 
         resourceConfigurations += listOf("en")
         vectorDrawables {

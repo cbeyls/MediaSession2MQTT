@@ -83,6 +83,10 @@ After typing the command, it's recommended to restart the device to make sure th
 
 As soon as the app configuration screen shows "Actively listening to MediaSessions" and the MQTT connection test was successful, you're good to go!
 
+## Home Assistant MQTT Discovery
+
+This app provides an integration for Home Assistant since version 1.1.0. Check the box "Enable Home Assistant integration" in the settings screen and the MQTT Discovery configuration will also be published, allowing Home Assistant to detect and configure MediaSession2MQTT as a new device automatically.
+
 ## The MQTT API
 
 This application is designed to only push state messages and not listen to MQTT commands. The MQTT connection is kept open as long as possible and no keepalive packets are sent. If the connection gets interrupted for any reason, it will be automatically re-established lazily when the next MQTT message needs to be published.
