@@ -2,6 +2,7 @@
 
 package be.digitalia.mediasession2mqtt.ui
 
+import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.os.Bundle
@@ -31,6 +32,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+@SuppressLint("ExportedPreferenceActivity")
 class SettingsActivity : PreferenceActivity() {
 
     @Inject
@@ -64,6 +66,7 @@ class SettingsActivity : PreferenceActivity() {
 
     private var currentCoroutineScope: CoroutineScope? = null
 
+    @Suppress("OVERRIDE_DEPRECATION")
     override fun onCreate(savedInstanceState: Bundle?) {
         // Manual dependencies injection
         applicationComponent.inject(this)
@@ -174,6 +177,7 @@ class SettingsActivity : PreferenceActivity() {
         setupStatus(coroutineScope)
     }
 
+    @Suppress("OVERRIDE_DEPRECATION")
     override fun onStop() {
         currentCoroutineScope?.cancel()
         currentCoroutineScope = null

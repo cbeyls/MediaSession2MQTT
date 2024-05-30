@@ -1,0 +1,19 @@
+[versions]
+androidGradlePlugin = "8.4.1"
+dagger = "2.51.1"
+kmqtt = "0.4.6"
+kotlin = "2.0.0"
+kotlinx-coroutines = "1.8.1"
+ksp = "2.0.0-1.0.21"
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "androidGradlePlugin" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+
+[libraries]
+dagger = { group = "com.google.dagger", name = "dagger", version.ref = "dagger" }
+dagger-compiler = { group = "com.google.dagger", name = "dagger-compiler", version.ref = "dagger" }
+kmqtt-common = { group = "io.github.davidepianca98", name = "kmqtt-common-jvm", version.ref = "kmqtt" }
+kmqtt-client = { group = "io.github.davidepianca98", name = "kmqtt-client-jvm", version.ref = "kmqtt" }
+kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "kotlinx-coroutines" }

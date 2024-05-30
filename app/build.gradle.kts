@@ -1,7 +1,7 @@
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("com.google.devtools.ksp")
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -16,9 +16,6 @@ android {
         versionName = "1.1.0"
 
         resourceConfigurations += listOf("en")
-        vectorDrawables {
-            useSupportLibrary = true
-        }
     }
 
     buildTypes {
@@ -48,6 +45,7 @@ android {
                         "META-INF/*.version"
                     )
                 }
+                vcsInfo.include = false
             }
         }
     }
@@ -66,12 +64,9 @@ android {
 }
 
 dependencies {
-    val daggerVersion = "2.51"
-    val kmqttVersion = "0.4.6"
-
-    implementation("com.google.dagger:dagger:$daggerVersion")
-    ksp("com.google.dagger:dagger-compiler:$daggerVersion")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
-    implementation("io.github.davidepianca98:kmqtt-common-jvm:$kmqttVersion")
-    implementation("io.github.davidepianca98:kmqtt-client-jvm:$kmqttVersion")
+    implementation(libs.dagger)
+    ksp(libs.dagger.compiler)
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kmqtt.common)
+    implementation(libs.kmqtt.client)
 }
