@@ -71,7 +71,7 @@ class KMQTTClient(
     override suspend fun disconnectQuietly() {
         withContext(NonCancellable + dispatcher) {
             // If running is false, we are already disconnected
-            if (client.running) {
+            if (client.isRunning()) {
                 try {
                     client.disconnect(ReasonCode.SUCCESS)
                 } catch (ignore: Exception) {

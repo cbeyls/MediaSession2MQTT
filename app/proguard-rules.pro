@@ -18,8 +18,3 @@
 #-keepclassmembers class fqcn.of.javascript.interface.for.webview {
 #   public *;
 #}
-
-# KMQTT: unused WebSocket protocol
--assumevalues class MQTTClient {
-  java.lang.String webSocket return null;
-}
