@@ -12,8 +12,8 @@ android {
         applicationId = "be.digitalia.mediasession2mqtt"
         minSdk = 22
         targetSdk = 34
-        versionCode = 2100111
-        versionName = "1.1.1"
+        versionCode = 2100112
+        versionName = "1.1.2"
 
         resourceConfigurations += listOf("en")
     }

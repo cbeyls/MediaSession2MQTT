@@ -28,13 +28,13 @@ For ADB, you first need to enable ADB debugging in the developer options of the 
 
 ```
 adb connect [IP address of your TV]
-adb install ./mediasession2mqtt-1.0.0.apk
+adb install ./mediasession2mqtt-1.1.2.apk
 ```
 
 or for an upgrade:
 
 ```
-adb install -r ./mediasession2mqtt-1.0.0.apk
+adb install -r ./mediasession2mqtt-1.1.2.apk
 ```
 
 ## Configuration
@@ -47,7 +47,7 @@ In the configuration screen, start by entering your MQTT broker configuration (p
 
 Test your connection by clicking on "Test Connection".
 
-Next, specify the QOS level you need for MQTT messsages (QOS 0 should be enough for most local connections).
+Next, specify the QOS level you need for MQTT messages (QOS 0 should be enough for most local connections).
 
 Then, change the device id if you have more than one device connecting to the MQTT broker (default is `1`).
 
