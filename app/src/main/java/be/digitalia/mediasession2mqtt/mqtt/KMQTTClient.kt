@@ -16,7 +16,15 @@ class KMQTTClient(
     private val dispatcher: CoroutineDispatcher
 ) : MQTTPublishClient {
 
-    private var client: MQTTClient = createClient()
+    private var currentClient: MQTTClient? = null
+
+    private fun getConnectedClient(forceNewInstance: Boolean): MQTTClient {
+        // Create the client lazily (simple implementation for single thread)
+        val client = currentClient.takeUnless { forceNewInstance }
+            ?: createClient().also { currentClient = it }
+        client.step()
+        return client
+    }
 
     private fun createClient(): MQTTClient {
         val mqttVersion = when (connectionSettings.protocolVersion) {
@@ -40,22 +48,21 @@ class KMQTTClient(
 
     override suspend fun connect() {
         withContext(dispatcher) {
-            client.step()
+            getConnectedClient(false)
         }
     }
 
     override suspend fun connectAndPublish(qosLevel: MQTTQoSLevel, topic: String, payload: String) {
         withContext(dispatcher) {
-            try {
-                client.step()
+            val client = try {
+                getConnectedClient(false)
             } catch (e: Exception) {
                 if (e is CancellationException) {
                     throw e
                 }
                 // At that point we are already disconnected, no need to call disconnect()
                 // Try to auto-reconnect from scratch
-                client = createClient()
-                client.step()
+                getConnectedClient(true)
             }
             ensureActive()
             client.publish(
@@ -70,12 +77,15 @@ class KMQTTClient(
 
     override suspend fun disconnectQuietly() {
         withContext(NonCancellable + dispatcher) {
-            // If running is false, we are already disconnected
-            if (client.isRunning()) {
-                try {
-                    client.disconnect(ReasonCode.SUCCESS)
-                } catch (ignore: Exception) {
+            currentClient?.let { client ->
+                // If running is false, we are already disconnected
+                if (client.isRunning()) {
+                    try {
+                        client.disconnect(ReasonCode.SUCCESS)
+                    } catch (ignore: Exception) {
+                    }
                 }
+                currentClient = null
             }
         }
     }
