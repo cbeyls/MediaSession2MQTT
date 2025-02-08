@@ -1,14 +1,14 @@
 package be.digitalia.mediasession2mqtt.mqtt
 
-import MQTTClient
+import io.github.davidepianca98.MQTTClient
+import io.github.davidepianca98.mqtt.MQTTVersion
+import io.github.davidepianca98.mqtt.packets.Qos
+import io.github.davidepianca98.mqtt.packets.mqttv5.ReasonCode
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
-import mqtt.MQTTVersion
-import mqtt.packets.Qos
-import mqtt.packets.mqttv5.ReasonCode
 
 @OptIn(ExperimentalUnsignedTypes::class)
 class KMQTTClient(
