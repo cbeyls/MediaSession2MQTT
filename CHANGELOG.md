@@ -1,11 +1,18 @@
 Change Log
 ==========
 
+## Version 1.1.3
+
+_2025-02-08_
+
+- Change target SDK version to 35
+- Upgrade all libraries to their latest version, including KMQTT to 1.0.0.
+
 ## Version 1.1.2
 
 _2024-12-03_
 
-- Update code to properly handle version 0.4.8 of the KMQTT library.
+- Update code to properly handle version 0.4.8 of the KMQTT library
 - Upgrade internal libraries.
 
 ## Version 1.1.1

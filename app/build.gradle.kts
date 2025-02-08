@@ -12,8 +12,8 @@ android {
         applicationId = "be.digitalia.mediasession2mqtt"
         minSdk = 22
         targetSdk = 35
-        versionCode = 2100112
-        versionName = "1.1.2"
+        versionCode = 2200113
+        versionName = "1.1.3"
 
         androidResources.localeFilters += listOf("en")
     }
@@ -33,8 +33,9 @@ android {
                         "DebugProbesKt.bin",
                         "kotlin-tooling-metadata.json",
                         "kotlin/**",
-                        "META-INF/*.kotlin_module",
-                        "META-INF/*.version"
+                        "META-INF/*.version",
+                        "META-INF/versions/**",
+                        "META-INF/NOTICE.md"
                     )
                 }
                 vcsInfo.include = false
