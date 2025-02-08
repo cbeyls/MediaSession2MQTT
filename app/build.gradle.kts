@@ -6,16 +6,16 @@ plugins {
 
 android {
     namespace = "be.digitalia.mediasession2mqtt"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "be.digitalia.mediasession2mqtt"
         minSdk = 22
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 2100112
         versionName = "1.1.2"
 
-        resourceConfigurations += listOf("en")
+        androidResources.localeFilters += listOf("en")
     }
 
     buildTypes {
