@@ -24,7 +24,6 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -35,9 +34,8 @@ class MainWorker @Inject constructor(
 ) {
     private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     private val applicationIdFlow: Flow<String> =
-        currentMediaControllerDetector.currentMediaController.mapLatest { mediaController ->
+        currentMediaControllerDetector.currentMediaController.map { mediaController ->
             mediaController?.packageName.orEmpty()
         }.distinctUntilChanged()
 
@@ -87,7 +85,7 @@ class MainWorker @Inject constructor(
         qosLevel: MQTTQoSLevel,
         deviceId: Int
     ) {
-        settingsProvider.isHassIntegrationEnabled.collectLatest { isEnabled ->
+        settingsProvider.isHassIntegrationEnabled.collect { isEnabled ->
             if (isEnabled) {
                 for (sensor in HASS_SENSORS) {
                     val discoveryConfig = createSensorDiscoveryConfiguration(
