@@ -12,13 +12,12 @@ import javax.inject.Singleton
 
 @Singleton
 class CurrentMediaControllerDetector @Inject constructor(private val mediaSessionManager: MediaSessionManager) {
-    private val activeSessionsListener =
-        MediaSessionManager.OnActiveSessionsChangedListener { controllers ->
-            updateActiveSessions(controllers ?: emptyList())
-        }
+    private val activeSessionsListener = MediaSessionManager.OnActiveSessionsChangedListener { controllers ->
+        updateActiveSessions(controllers.orEmpty())
+    }
 
     // Each session can be uniquely identified using its token
-    private val activeControllersMap = hashMapOf<MediaSession.Token, MediaController>()
+    private val activeControllersMap = hashMapOf<MediaSession.Token, MediaControllerCallback>()
 
     private val _isListening = MutableStateFlow(false)
     val isListening = _isListening.asStateFlow()
@@ -26,12 +25,11 @@ class CurrentMediaControllerDetector @Inject constructor(private val mediaSessio
     private val _currentMediaController = MutableStateFlow<MediaController?>(null)
     val currentMediaController = _currentMediaController.asStateFlow()
 
-    private inner class MediaControllerCallback(private val mediaController: MediaController) :
-        MediaController.Callback() {
+    private inner class MediaControllerCallback(val mediaController: MediaController) : MediaController.Callback() {
         override fun onSessionDestroyed() {
             // Garbage collection
-            mediaController.unregisterCallback(this)
-            activeControllersMap.remove(mediaController.sessionToken)
+            unregister()
+            activeControllersMap -= mediaController.sessionToken
         }
 
         override fun onPlaybackStateChanged(state: PlaybackState?) {
@@ -40,6 +38,10 @@ class CurrentMediaControllerDetector @Inject constructor(private val mediaSessio
                 // becomes the current controller, if it's not already
                 _currentMediaController.value = mediaController
             }
+        }
+
+        fun unregister() {
+            mediaController.unregisterCallback(this)
         }
     }
 
@@ -60,6 +62,9 @@ class CurrentMediaControllerDetector @Inject constructor(private val mediaSessio
     fun stopListening() {
         if (_isListening.value) {
             _currentMediaController.value = null
+            for (controller in activeControllersMap.values) {
+                controller.unregister()
+            }
             activeControllersMap.clear()
             mediaSessionManager.removeOnActiveSessionsChangedListener(activeSessionsListener)
             _isListening.value = false
@@ -89,33 +94,34 @@ class CurrentMediaControllerDetector @Inject constructor(private val mediaSessio
         if (controllers.isEmpty()) {
             _currentMediaController.value = null
         } else {
-            val currentController = _currentMediaController.value
-            var currentControllerFound = false
+            val currentSessionToken = _currentMediaController.value?.sessionToken
+            var hasCurrentController = false
             var newActivePlaybackController: MediaController? = null
             for (controller in controllers) {
                 // Use sessionToken to uniquely identify the controllers and avoid duplicates
-                if (!currentControllerFound && currentController != null
-                    && (currentController === controller || currentController.sessionToken == controller.sessionToken)
-                ) {
-                    currentControllerFound = true
+                val sessionToken = controller.sessionToken
+                if (sessionToken in activeControllersMap) {
+                    // Check if the current controller (if any) is still present
+                    if (!hasCurrentController && sessionToken == currentSessionToken) {
+                        hasCurrentController = true
+                    }
                 } else {
-                    // Check if it's a currently monitored controller
-                    if (!activeControllersMap.containsKey(controller.sessionToken)) {
-                        activeControllersMap[controller.sessionToken] = controller
-                        // If it's active, select it immediately as new current controller
-                        if (newActivePlaybackController == null && controller.playbackState.isPlaybackActive) {
-                            newActivePlaybackController = controller
-                        }
-                        controller.registerCallback(MediaControllerCallback(controller))
+                    // Register new controller
+                    val callback = MediaControllerCallback(controller)
+                    activeControllersMap[sessionToken] = callback
+                    controller.registerCallback(callback)
+                    // If playback is active, select it immediately as new current controller
+                    if (controller.playbackState.isPlaybackActive) {
+                        newActivePlaybackController = controller
                     }
                 }
             }
 
             if (newActivePlaybackController != null) {
                 _currentMediaController.value = newActivePlaybackController
-            } else if (!currentControllerFound) {
+            } else if (!hasCurrentController) {
                 // Select the first controller by default
-                _currentMediaController.value = activeControllersMap[controllers[0].sessionToken]
+                _currentMediaController.value = activeControllersMap[controllers[0].sessionToken]?.mediaController
             }
         }
     }
