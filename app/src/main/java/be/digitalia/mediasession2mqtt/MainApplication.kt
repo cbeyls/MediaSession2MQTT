@@ -16,6 +16,6 @@ class MainApplication : Application(), ApplicationComponentProvider {
     override fun onCreate() {
         super.onCreate()
 
-        applicationComponent.mainWorker().start()
+        applicationComponent.mainWorker.start()
     }
 }

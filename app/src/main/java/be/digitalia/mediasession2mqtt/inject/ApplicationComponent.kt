@@ -11,7 +11,7 @@ import javax.inject.Singleton
 @Component(modules = [MediaSessionModule::class, MQTTPublishClientModule::class])
 @Singleton
 interface ApplicationComponent {
-    fun mainWorker(): MainWorker
+    val mainWorker: MainWorker
     fun inject(settingsActivity: SettingsActivity)
     fun inject(mediaSessionListenerService: MediaSessionListenerService)
 
