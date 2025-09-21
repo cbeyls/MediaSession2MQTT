@@ -57,7 +57,8 @@ class SettingsProvider @Inject constructor(context: Context) {
             val deviceId = getString(PreferenceKeys.DEVICE_ID, null).orEmpty().toIntOrNull()
                 ?: DEFAULT_DEVICE_ID
             return MessageSettings(
-                qosLevel = MQTTQoSLevel.entries[qosLevel], deviceId = deviceId
+                qosLevel = MQTTQoSLevel.entries[qosLevel],
+                deviceId = deviceId
             )
         }
 

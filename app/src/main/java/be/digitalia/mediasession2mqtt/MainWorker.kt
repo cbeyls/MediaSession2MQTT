@@ -8,8 +8,10 @@ import be.digitalia.mediasession2mqtt.mediasession.playbackStateFlow
 import be.digitalia.mediasession2mqtt.mqtt.MQTTPublishClient
 import be.digitalia.mediasession2mqtt.mqtt.MQTTQoSLevel
 import be.digitalia.mediasession2mqtt.mqtt.tryConnectAndPublish
+import be.digitalia.mediasession2mqtt.mqttmediaplayer.MQTTMediaMetadata
 import be.digitalia.mediasession2mqtt.mqttmediaplayer.MQTTPlaybackState
 import be.digitalia.mediasession2mqtt.mqttmediaplayer.toMQTTPlaybackStateOrNull
+import be.digitalia.mediasession2mqtt.mqttmediaplayer.toMediaDurationInMillis
 import be.digitalia.mediasession2mqtt.mqttmediaplayer.toMediaTitle
 import be.digitalia.mediasession2mqtt.settings.SettingsProvider
 import kotlinx.coroutines.CoroutineScope
@@ -43,7 +45,7 @@ class MainWorker @Inject constructor(
     private val playbackStateFlow: Flow<MQTTPlaybackState> =
         currentMediaControllerDetector.currentMediaController.flatMapLatest { mediaController ->
             when (mediaController) {
-                null -> flowOf(MQTTPlaybackState.idle)
+                null -> flowOf(MQTTPlaybackState.Idle)
                 else -> mediaController.playbackStateFlow
                     .map { it.toMQTTPlaybackStateOrNull() }
                     .filterNotNull()
@@ -51,12 +53,17 @@ class MainWorker @Inject constructor(
         }.distinctUntilChanged()
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val mediaTitleFlow: Flow<String> =
+    private val mediaMetadataFlow: Flow<MQTTMediaMetadata> =
         currentMediaControllerDetector.currentMediaController.flatMapLatest { mediaController ->
             when (mediaController) {
-                null -> flowOf("")
+                null -> flowOf(MQTTMediaMetadata())
                 else -> mediaController.metadataFlow
-                    .map { it.toMediaTitle() }
+                    .map {
+                        MQTTMediaMetadata(
+                            title = it.toMediaTitle(),
+                            durationInMillis = it.toMediaDurationInMillis()
+                        )
+                    }
             }
         }.distinctUntilChanged()
 
@@ -70,7 +77,7 @@ class MainWorker @Inject constructor(
                             launch { publishHassConfigurationIfEnabled(client, qosLevel, deviceId) }
                             launch { publishApplicationId(client, qosLevel, deviceId) }
                             launch { publishPlaybackState(client, qosLevel, deviceId) }
-                            launch { publishMediaTitle(client, qosLevel, deviceId) }
+                            launch { publishMediaMetadata(client, qosLevel, deviceId) }
                         }
                     }
                 } finally {
@@ -128,19 +135,29 @@ class MainWorker @Inject constructor(
                 "$ROOT_TOPIC/$deviceId/$PLAYBACK_STATE_SUB_TOPIC",
                 playbackState.name
             )
+            client.tryConnectAndPublish(
+                qosLevel,
+                "$ROOT_TOPIC/$deviceId/$PLAYBACK_POSITION_SUB_TOPIC",
+                playbackState.positionInMillis
+            )
         }
     }
 
-    private suspend fun publishMediaTitle(
+    private suspend fun publishMediaMetadata(
         client: MQTTPublishClient,
         qosLevel: MQTTQoSLevel,
         deviceId: Int
     ) {
-        mediaTitleFlow.collect { mediaTitle ->
+        mediaMetadataFlow.collect { mediaMetadata ->
             client.tryConnectAndPublish(
                 qosLevel,
                 "$ROOT_TOPIC/$deviceId/$MEDIA_TITLE_SUB_TOPIC",
-                mediaTitle
+                mediaMetadata.title
+            )
+            client.tryConnectAndPublish(
+                qosLevel,
+                "$ROOT_TOPIC/$deviceId/$MEDIA_DURATION_SUB_TOPIC",
+                mediaMetadata.durationInMillis
             )
         }
     }
@@ -155,7 +172,9 @@ class MainWorker @Inject constructor(
         private const val ROOT_TOPIC = "mediaSession"
         private const val APPLICATION_ID_SUB_TOPIC = "applicationId"
         private const val PLAYBACK_STATE_SUB_TOPIC = "playbackState"
+        private const val PLAYBACK_POSITION_SUB_TOPIC = "playbackPosition"
         private const val MEDIA_TITLE_SUB_TOPIC = "mediaTitle"
+        private const val MEDIA_DURATION_SUB_TOPIC = "mediaDuration"
 
         private const val HASS_ROOT_TOPIC = "homeassistant"
         private val HASS_SENSORS = listOf(
@@ -164,6 +183,14 @@ class MainWorker @Inject constructor(
                 serializedName = "playback_state",
                 icon = "mdi:play-pause",
                 subTopic = PLAYBACK_STATE_SUB_TOPIC
+            ),
+            Sensor(
+                name = "Playback Position",
+                serializedName = "playback_position",
+                icon = "mdi:progress-clock",
+                subTopic = PLAYBACK_POSITION_SUB_TOPIC,
+                deviceClass = "duration",
+                unitOfMeasurement = "ms"
             ),
             Sensor(
                 name = "Application Id",
@@ -176,6 +203,14 @@ class MainWorker @Inject constructor(
                 serializedName = "media_title",
                 icon = "mdi:information",
                 subTopic = MEDIA_TITLE_SUB_TOPIC
+            ),
+            Sensor(
+                name = "Media Duration",
+                serializedName = "media_duration",
+                icon = "mdi:clock",
+                subTopic = MEDIA_DURATION_SUB_TOPIC,
+                deviceClass = "duration",
+                unitOfMeasurement = "ms"
             )
         )
     }

@@ -14,9 +14,9 @@ fun PlaybackState?.toMQTTPlaybackStateOrNull(): MQTTPlaybackState? {
         return null
     }
     return when (state) {
-        PlaybackState.STATE_NONE, PlaybackState.STATE_STOPPED, PlaybackState.STATE_ERROR -> MQTTPlaybackState.idle
-        PlaybackState.STATE_PLAYING -> MQTTPlaybackState.playing
-        PlaybackState.STATE_PAUSED -> MQTTPlaybackState.paused
+        PlaybackState.STATE_NONE, PlaybackState.STATE_STOPPED, PlaybackState.STATE_ERROR -> MQTTPlaybackState.Idle
+        PlaybackState.STATE_PLAYING -> MQTTPlaybackState.Playing(position.toString())
+        PlaybackState.STATE_PAUSED -> MQTTPlaybackState.Paused(position.toString())
         else -> null
     }
 }
@@ -40,4 +40,15 @@ fun MediaMetadata?.toMediaTitle(): String {
     // If we have a title, check if we also have an artist
     val artist = getString(MediaMetadata.METADATA_KEY_ARTIST)
     return if (artist.isNullOrEmpty()) title else "$artist - $title"
+}
+
+/**
+ * Extract the media duration in milliseconds as a String, or return an empty String if unavailable.
+ */
+fun MediaMetadata?.toMediaDurationInMillis(): String {
+    if (this == null) {
+        return ""
+    }
+    val duration = getLong(MediaMetadata.METADATA_KEY_DURATION)
+    return if (duration == 0L) "" else duration.toString()
 }

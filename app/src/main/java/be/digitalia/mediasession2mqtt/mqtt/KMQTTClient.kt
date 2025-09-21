@@ -82,7 +82,7 @@ class KMQTTClient(
                 if (client.isRunning()) {
                     try {
                         client.disconnect(ReasonCode.SUCCESS)
-                    } catch (ignore: Exception) {
+                    } catch (_: Exception) {
                     }
                 }
                 currentClient = null
