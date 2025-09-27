@@ -102,6 +102,12 @@ Note that the `buffering` state is intentionally not supported for the following
 - Since buffering can happen at any time, adding this state makes it harder to detect transitions to and from the `playing` state;
 - Buffering can not be considered as a sub-state of `playing` because some applications pre-buffer playback even before the user requests playing the content (e.g. Amazon Prime Video).
 
+### mediaSession/{deviceId}/playbackPosition
+
+The current playback position in milliseconds of the currently playing or paused media. Updated at the same time as the playback state.
+In the `playing` state, the position won't be updated periodically: the difference between the current time and the playback position last update time must be added to this value to calculate the current playback position.
+When no media is currently playing or paused, the value is an empty string (`""`).
+
 ### mediaSession/{deviceId}/applicationId
 
 The Android application id of the currently active MediaSession, or an empty String (`""`) if no MediaSession is currently active.
@@ -120,6 +126,10 @@ Examples of possible values:
 The title of the currently playing or paused media, or an empty String (`""`) if no media is currently playing or paused or the title is unavailable.
 
 Note that many applications don't report any title, for example: Netflix, Disney+ for Android TV or Amazon Prime Video for Android TV.
+
+### mediaSession/{deviceId}/mediaDuration
+
+The duration of the currently playing or paused media in milliseconds, or an empty String (`""`) if no media is currently playing or paused or the duration is unavailable.
 
 ## A note about the Netflix app
 
