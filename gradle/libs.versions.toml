@@ -1,6 +1,6 @@
 [versions]
 androidGradlePlugin = "8.13.0"
-dagger = "2.57.1"
+dagger = "2.57.2"
 kmqtt = "1.0.0"
 kotlin = "2.2.20"
 kotlinx-coroutines = "1.10.2"
