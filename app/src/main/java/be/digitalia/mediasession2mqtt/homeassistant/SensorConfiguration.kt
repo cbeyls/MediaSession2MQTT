@@ -28,7 +28,9 @@ private fun JsonWriter.writeSensor(
     sensorName: String,
     sensorUniqueId: String,
     sensorIcon: String,
-    sensorTopic: String
+    sensorTopic: String,
+    sensorDeviceClass: String?,
+    sensorUnitOfMeasurement: String?
 ) {
     beginObject()
 
@@ -42,6 +44,16 @@ private fun JsonWriter.writeSensor(
     value(sensorTopic)
     name("device")
     writeDeviceInfo(deviceId)
+    name("device")
+    writeDeviceInfo(deviceId)
+    sensorDeviceClass?.let {
+        name("device_class")
+        value(it)
+    }
+    sensorUnitOfMeasurement?.let {
+        name("unit_of_measurement")
+        value(it)
+    }
 
     endObject()
 }
@@ -54,7 +66,9 @@ fun createSensorDiscoveryConfiguration(deviceId: Int, sensor: Sensor, sensorTopi
             sensorName = sensor.name,
             sensorUniqueId = sensor.getUniqueId(deviceId),
             sensorIcon = sensor.icon,
-            sensorTopic = sensorTopic
+            sensorTopic = sensorTopic,
+            sensorDeviceClass = sensor.deviceClass,
+            sensorUnitOfMeasurement = sensor.unitOfMeasurement
         )
     }
     return writer.toString()

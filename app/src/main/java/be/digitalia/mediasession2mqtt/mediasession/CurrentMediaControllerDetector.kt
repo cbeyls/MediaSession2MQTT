@@ -6,6 +6,7 @@ import android.media.session.MediaSession
 import android.media.session.MediaSessionManager
 import android.media.session.PlaybackState
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -20,10 +21,10 @@ class CurrentMediaControllerDetector @Inject constructor(private val mediaSessio
     private val activeControllersMap = hashMapOf<MediaSession.Token, MediaControllerCallback>()
 
     private val _isListening = MutableStateFlow(false)
-    val isListening = _isListening.asStateFlow()
+    val isListening: StateFlow<Boolean> = _isListening.asStateFlow()
 
     private val _currentMediaController = MutableStateFlow<MediaController?>(null)
-    val currentMediaController = _currentMediaController.asStateFlow()
+    val currentMediaController: StateFlow<MediaController?> = _currentMediaController.asStateFlow()
 
     private inner class MediaControllerCallback(val mediaController: MediaController) : MediaController.Callback() {
         override fun onSessionDestroyed() {
@@ -54,7 +55,7 @@ class CurrentMediaControllerDetector @Inject constructor(private val mediaSessio
                 activeSessionsListener,
                 componentName
             )
-        } catch (ignore: SecurityException) {
+        } catch (_: SecurityException) {
             // No permission granted to listen to notifications
         }
     }
