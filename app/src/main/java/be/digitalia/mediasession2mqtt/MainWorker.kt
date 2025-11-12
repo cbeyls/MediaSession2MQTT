@@ -1,5 +1,6 @@
 package be.digitalia.mediasession2mqtt
 
+import be.digitalia.mediasession2mqtt.flow.collectWithPrevious
 import be.digitalia.mediasession2mqtt.homeassistant.Sensor
 import be.digitalia.mediasession2mqtt.homeassistant.createSensorDiscoveryConfiguration
 import be.digitalia.mediasession2mqtt.mediasession.CurrentMediaControllerDetector
@@ -50,7 +51,7 @@ class MainWorker @Inject constructor(
                     .map { it.toMQTTPlaybackStateOrNull() }
                     .filterNotNull()
             }
-        }.distinctUntilChanged()
+        }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val mediaMetadataFlow: Flow<MQTTMediaMetadata> =
@@ -65,7 +66,7 @@ class MainWorker @Inject constructor(
                         )
                     }
             }
-        }.distinctUntilChanged()
+        }
 
     private suspend fun monitorSettings() {
         settingsProvider.connectionSettings.collectLatest { connectionSettings ->
@@ -129,17 +130,23 @@ class MainWorker @Inject constructor(
         qosLevel: MQTTQoSLevel,
         deviceId: Int
     ) {
-        playbackStateFlow.collect { playbackState ->
-            client.tryConnectAndPublish(
-                qosLevel,
-                "$ROOT_TOPIC/$deviceId/$PLAYBACK_STATE_SUB_TOPIC",
-                playbackState.name
-            )
-            client.tryConnectAndPublish(
-                qosLevel,
-                "$ROOT_TOPIC/$deviceId/$PLAYBACK_POSITION_SUB_TOPIC",
-                playbackState.positionInMillis
-            )
+        playbackStateFlow.collectWithPrevious { previousPlaybackState, playbackState ->
+            val name = playbackState.name
+            if (previousPlaybackState?.name != name) {
+                client.tryConnectAndPublish(
+                    qosLevel,
+                    "$ROOT_TOPIC/$deviceId/$PLAYBACK_STATE_SUB_TOPIC",
+                    name
+                )
+            }
+            val positionInMillis = playbackState.positionInMillis
+            if (previousPlaybackState?.positionInMillis != positionInMillis) {
+                client.tryConnectAndPublish(
+                    qosLevel,
+                    "$ROOT_TOPIC/$deviceId/$PLAYBACK_POSITION_SUB_TOPIC",
+                    positionInMillis
+                )
+            }
         }
     }
 
@@ -148,17 +155,23 @@ class MainWorker @Inject constructor(
         qosLevel: MQTTQoSLevel,
         deviceId: Int
     ) {
-        mediaMetadataFlow.collect { mediaMetadata ->
-            client.tryConnectAndPublish(
-                qosLevel,
-                "$ROOT_TOPIC/$deviceId/$MEDIA_TITLE_SUB_TOPIC",
-                mediaMetadata.title
-            )
-            client.tryConnectAndPublish(
-                qosLevel,
-                "$ROOT_TOPIC/$deviceId/$MEDIA_DURATION_SUB_TOPIC",
-                mediaMetadata.durationInMillis
-            )
+        mediaMetadataFlow.collectWithPrevious { previousMediaMetadata, mediaMetadata ->
+            val title = mediaMetadata.title
+            if (previousMediaMetadata?.title != title) {
+                client.tryConnectAndPublish(
+                    qosLevel,
+                    "$ROOT_TOPIC/$deviceId/$MEDIA_TITLE_SUB_TOPIC",
+                    title
+                )
+            }
+            val durationInMillis = mediaMetadata.durationInMillis
+            if (previousMediaMetadata?.durationInMillis != durationInMillis) {
+                client.tryConnectAndPublish(
+                    qosLevel,
+                    "$ROOT_TOPIC/$deviceId/$MEDIA_DURATION_SUB_TOPIC",
+                    durationInMillis
+                )
+            }
         }
     }
 
