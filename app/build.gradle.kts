@@ -8,12 +8,12 @@ plugins {
 
 android {
     namespace = "be.digitalia.mediasession2mqtt"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "be.digitalia.mediasession2mqtt"
         minSdk = 22
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 2200113
         versionName = "1.1.3"
 
