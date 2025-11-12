@@ -50,5 +50,5 @@ fun MediaMetadata?.toMediaDurationInMillis(): String {
         return ""
     }
     val duration = getLong(MediaMetadata.METADATA_KEY_DURATION)
-    return if (duration == 0L) "" else duration.toString()
+    return if (duration > 0L) duration.toString() else ""
 }
