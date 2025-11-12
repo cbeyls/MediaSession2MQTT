@@ -14,8 +14,8 @@ android {
         applicationId = "be.digitalia.mediasession2mqtt"
         minSdk = 22
         targetSdk = 36
-        versionCode = 2200113
-        versionName = "1.1.3"
+        versionCode = 2200114
+        versionName = "1.1.4"
 
         androidResources.localeFilters += listOf("en")
     }

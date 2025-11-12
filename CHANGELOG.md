@@ -1,6 +1,15 @@
 Change Log
 ==========
 
+## Version 1.1.4
+
+_2025-11-12_
+
+- New feature: publish the media duration and the playback position
+- Fix: potential memory leak
+- Change target SDK version to 36
+- Upgrade internal libraries.
+
 ## Version 1.1.3
 
 _2025-02-08_
