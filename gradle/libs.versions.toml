@@ -2,6 +2,7 @@
 androidGradlePlugin = "9.0.0"
 dagger = "2.59"
 kmqtt = "1.0.0"
+kotlin = "2.3.0"
 kotlinx-coroutines = "1.10.2"
 ksp = "2.3.4"
 
@@ -14,4 +15,6 @@ dagger = { group = "com.google.dagger", name = "dagger", version.ref = "dagger" 
 dagger-compiler = { group = "com.google.dagger", name = "dagger-compiler", version.ref = "dagger" }
 kmqtt-common = { group = "io.github.davidepianca98", name = "kmqtt-common-jvm", version.ref = "kmqtt" }
 kmqtt-client = { group = "io.github.davidepianca98", name = "kmqtt-client-jvm", version.ref = "kmqtt" }
+kotlin-gradle-plugin = { group = "org.jetbrains.kotlin", "name" = "kotlin-gradle-plugin", version.ref = "kotlin" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "kotlinx-coroutines" }
+ksp-gradle-plugin = { group = "com.google.devtools.ksp", "name" = "symbol-processing-gradle-plugin", version.ref = "ksp" }
