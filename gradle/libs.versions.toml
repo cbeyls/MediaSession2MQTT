@@ -1,10 +1,10 @@
 [versions]
-androidGradlePlugin = "9.0.0"
-dagger = "2.59"
+androidGradlePlugin = "9.2.1"
+dagger = "2.59.2"
 kmqtt = "1.0.0"
-kotlin = "2.3.0"
-kotlinx-coroutines = "1.10.2"
-ksp = "2.3.4"
+kotlin = "2.3.21"
+kotlinx-coroutines = "1.11.0"
+ksp = "2.3.7"
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "androidGradlePlugin" }
