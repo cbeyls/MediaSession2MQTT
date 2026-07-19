@@ -1,5 +1,6 @@
 package be.digitalia.mediasession2mqtt
 
+import android.content.Context
 import be.digitalia.mediasession2mqtt.flow.collectWithPrevious
 import be.digitalia.mediasession2mqtt.homeassistant.Sensor
 import be.digitalia.mediasession2mqtt.homeassistant.createSensorDiscoveryConfiguration
@@ -14,24 +15,26 @@ import be.digitalia.mediasession2mqtt.mqttmediaplayer.MQTTPlaybackState
 import be.digitalia.mediasession2mqtt.mqttmediaplayer.toMQTTPlaybackStateOrNull
 import be.digitalia.mediasession2mqtt.mqttmediaplayer.toMediaDurationInMillis
 import be.digitalia.mediasession2mqtt.mqttmediaplayer.toMediaTitle
+import be.digitalia.mediasession2mqtt.service.MediaSessionListenerService
 import be.digitalia.mediasession2mqtt.settings.SettingsProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 class MainWorker @Inject constructor(
-    currentMediaControllerDetector: CurrentMediaControllerDetector,
+    private val currentMediaControllerDetector: CurrentMediaControllerDetector,
     private val settingsProvider: SettingsProvider,
     private val mqttClientFactory: MQTTPublishClient.Factory
 ) {
@@ -47,9 +50,7 @@ class MainWorker @Inject constructor(
         currentMediaControllerDetector.currentMediaController.flatMapLatest { mediaController ->
             when (mediaController) {
                 null -> flowOf(MQTTPlaybackState.Idle)
-                else -> mediaController.playbackStateFlow
-                    .map { it.toMQTTPlaybackStateOrNull() }
-                    .filterNotNull()
+                else -> mediaController.playbackStateFlow.mapNotNull { it.toMQTTPlaybackStateOrNull() }
             }
         }
 
@@ -175,13 +176,24 @@ class MainWorker @Inject constructor(
         }
     }
 
-    fun start() {
+    fun start(context: Context) {
         coroutineScope.launch {
             monitorSettings()
+        }
+        // Watchdog to attempt rebinding MediaSessionListenerService when disconnected
+        coroutineScope.launch {
+            currentMediaControllerDetector.isListening.collectLatest { isListening ->
+                if (!isListening) {
+                    delay(AUTO_REBIND_SERVICE_DELAY_MILLIS)
+                    MediaSessionListenerService.requestRebind(context)
+                }
+            }
         }
     }
 
     companion object {
+        private const val AUTO_REBIND_SERVICE_DELAY_MILLIS = 2000L
+
         private const val ROOT_TOPIC = "mediaSession"
         private const val APPLICATION_ID_SUB_TOPIC = "applicationId"
         private const val PLAYBACK_STATE_SUB_TOPIC = "playbackState"
