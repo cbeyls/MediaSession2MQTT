@@ -1,6 +1,14 @@
 Change Log
 ==========
 
+## Version 1.1.5
+
+_2026-07-19_
+
+- Fix: attempt to automatically rebind the service on device boot or after a disconnection
+- Change target SDK version to 37
+- Upgrade internal libraries.
+
 ## Version 1.1.4
 
 _2025-11-12_
