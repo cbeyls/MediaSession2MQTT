@@ -1,7 +1,6 @@
 package be.digitalia.mediasession2mqtt
 
 import android.content.Context
-import be.digitalia.mediasession2mqtt.flow.collectWithPrevious
 import be.digitalia.mediasession2mqtt.homeassistant.Sensor
 import be.digitalia.mediasession2mqtt.homeassistant.createSensorDiscoveryConfiguration
 import be.digitalia.mediasession2mqtt.mediasession.CurrentMediaControllerDetector
@@ -28,6 +27,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.fold
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
@@ -131,7 +131,7 @@ class MainWorker @Inject constructor(
         qosLevel: MQTTQoSLevel,
         deviceId: Int
     ) {
-        playbackStateFlow.collectWithPrevious { previousPlaybackState, playbackState ->
+        playbackStateFlow.fold(null as MQTTPlaybackState?) { previousPlaybackState, playbackState ->
             val name = playbackState.name
             if (previousPlaybackState?.name != name) {
                 client.tryConnectAndPublish(
@@ -148,6 +148,7 @@ class MainWorker @Inject constructor(
                     positionInMillis
                 )
             }
+            playbackState
         }
     }
 
@@ -156,7 +157,7 @@ class MainWorker @Inject constructor(
         qosLevel: MQTTQoSLevel,
         deviceId: Int
     ) {
-        mediaMetadataFlow.collectWithPrevious { previousMediaMetadata, mediaMetadata ->
+        mediaMetadataFlow.fold(null as MQTTMediaMetadata?) { previousMediaMetadata, mediaMetadata ->
             val title = mediaMetadata.title
             if (previousMediaMetadata?.title != title) {
                 client.tryConnectAndPublish(
@@ -173,6 +174,7 @@ class MainWorker @Inject constructor(
                     durationInMillis
                 )
             }
+            mediaMetadata
         }
     }
 
