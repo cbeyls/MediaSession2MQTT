@@ -41,13 +41,16 @@ suspend fun MQTTPublishClient.publishWithRetry(
     topic: String,
     payload: String
 ) {
+    android.util.Log.d("MediaSession2MQTT", "publishWithRetry start ($topic)")
     var attemptIndex = 0
     while (!tryConnectAndPublish(qosLevel, topic, payload)) {
+        android.util.Log.d("MediaSession2MQTT", "retrying in ${RETRY_DELAYS_MILLIS[attemptIndex]}ms ($topic)")
         delay(RETRY_DELAYS_MILLIS[attemptIndex])
         if (attemptIndex < RETRY_DELAYS_MILLIS.lastIndex) {
             attemptIndex++
         }
     }
+    android.util.Log.d("MediaSession2MQTT", "publish OK ($topic)")
 }
 
 private val RETRY_DELAYS_MILLIS = longArrayOf(1_000L, 2_000L, 5_000L, 15_000L, 30_000L)

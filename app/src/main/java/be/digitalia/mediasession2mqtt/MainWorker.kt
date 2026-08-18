@@ -26,6 +26,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -157,13 +158,17 @@ class MainWorker(
                 }
             }
             launch {
-                playbackStateFlow.map { it.positionInMillis }.distinctUntilChanged()
-                    .collectLatest { positionInMillis ->
+                // Some players (e.g. Emby) update the playback position every second.
+                // Rate-limit the publications to avoid flooding the broker with retained
+                // messages: conflate() keeps only the latest position while waiting
+                playbackStateFlow.map { it.positionInMillis }.distinctUntilChanged().conflate()
+                    .collect { positionInMillis ->
                         client.publishWithRetry(
                             qosLevel,
                             "$ROOT_TOPIC/$deviceId/$PLAYBACK_POSITION_SUB_TOPIC",
                             positionInMillis
                         )
+                        delay(POSITION_PUBLISH_MIN_INTERVAL_MILLIS)
                     }
             }
         }
@@ -237,6 +242,7 @@ class MainWorker(
 
         private const val AUTO_REBIND_SERVICE_DELAY_MILLIS = 2000L
         private const val RESTART_DELAY_MILLIS = 5000L
+        private const val POSITION_PUBLISH_MIN_INTERVAL_MILLIS = 5000L
 
         private const val ROOT_TOPIC = "mediaSession"
         private const val APPLICATION_ID_SUB_TOPIC = "applicationId"

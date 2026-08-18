@@ -4,6 +4,7 @@ import io.github.davidepianca98.MQTTClient
 import io.github.davidepianca98.mqtt.MQTTVersion
 import io.github.davidepianca98.mqtt.packets.Qos
 import io.github.davidepianca98.mqtt.packets.mqttv5.ReasonCode
+import java.io.IOException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.NonCancellable
@@ -20,9 +21,19 @@ class KMQTTClient(
 
     private fun getConnectedClient(forceNewInstance: Boolean): MQTTClient {
         // Create the client lazily (simple implementation for single thread)
-        val client = currentClient.takeUnless { forceNewInstance }
-            ?: createClient().also { currentClient = it }
+        var client = currentClient.takeUnless { forceNewInstance }
+            ?: run {
+                android.util.Log.d("MediaSession2MQTT", "creating new MQTT client (forceNew=$forceNewInstance)")
+                createClient().also { currentClient = it }
+            }
         client.step()
+        if (!client.isRunning()) {
+            // A stopped client silently ignores step() and drops published messages,
+            // so it must be detected and replaced with a new connected instance
+            android.util.Log.d("MediaSession2MQTT", "client not running, creating replacement")
+            client = createClient().also { currentClient = it }
+            client.step()
+        }
         return client
     }
 
@@ -77,6 +88,12 @@ class KMQTTClient(
             payload.encodeToByteArray().toUByteArray()
         )
         client.step()
+        if (!client.isRunning()) {
+            // The connection died during the publish and the message may have been dropped:
+            // report the failure so the caller can retry
+            currentClient = null
+            throw IOException("MQTT connection lost while publishing")
+        }
     }
 
     override suspend fun disconnectQuietly() {
