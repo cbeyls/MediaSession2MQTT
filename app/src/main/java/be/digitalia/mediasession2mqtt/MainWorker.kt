@@ -8,7 +8,7 @@ import be.digitalia.mediasession2mqtt.mediasession.metadataFlow
 import be.digitalia.mediasession2mqtt.mediasession.playbackStateFlow
 import be.digitalia.mediasession2mqtt.mqtt.MQTTPublishClient
 import be.digitalia.mediasession2mqtt.mqtt.MQTTQoSLevel
-import be.digitalia.mediasession2mqtt.mqtt.tryConnectAndPublish
+import be.digitalia.mediasession2mqtt.mqtt.publishWithRetry
 import be.digitalia.mediasession2mqtt.mqttmediaplayer.MQTTMediaMetadata
 import be.digitalia.mediasession2mqtt.mqttmediaplayer.MQTTPlaybackState
 import be.digitalia.mediasession2mqtt.mqttmediaplayer.toMQTTPlaybackStateOrNull
@@ -28,7 +28,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.fold
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
@@ -96,7 +95,7 @@ class MainWorker(
         qosLevel: MQTTQoSLevel,
         deviceId: Int
     ) {
-        settingsProvider.isHassIntegrationEnabled.collect { isEnabled ->
+        settingsProvider.isHassIntegrationEnabled.collectLatest { isEnabled ->
             if (isEnabled) {
                 for (sensor in HASS_SENSORS) {
                     val discoveryConfig = createSensorDiscoveryConfiguration(
@@ -104,7 +103,7 @@ class MainWorker(
                         sensor = sensor,
                         sensorTopic = "$ROOT_TOPIC/$deviceId/${sensor.subTopic}"
                     )
-                    client.tryConnectAndPublish(
+                    client.publishWithRetry(
                         qosLevel,
                         "$HASS_ROOT_TOPIC/${sensor.type}/${sensor.getUniqueId(deviceId)}/config",
                         discoveryConfig
@@ -119,8 +118,8 @@ class MainWorker(
         qosLevel: MQTTQoSLevel,
         deviceId: Int
     ) {
-        applicationIdFlow.collect { applicationId ->
-            client.tryConnectAndPublish(
+        applicationIdFlow.collectLatest { applicationId ->
+            client.publishWithRetry(
                 qosLevel,
                 "$ROOT_TOPIC/$deviceId/$APPLICATION_ID_SUB_TOPIC",
                 applicationId
@@ -133,24 +132,26 @@ class MainWorker(
         qosLevel: MQTTQoSLevel,
         deviceId: Int
     ) {
-        playbackStateFlow.fold(null as MQTTPlaybackState?) { previousPlaybackState, playbackState ->
-            val name = playbackState.name
-            if (previousPlaybackState?.name != name) {
-                client.tryConnectAndPublish(
-                    qosLevel,
-                    "$ROOT_TOPIC/$deviceId/$PLAYBACK_STATE_SUB_TOPIC",
-                    name
-                )
+        coroutineScope {
+            launch {
+                playbackStateFlow.map { it.name }.distinctUntilChanged().collectLatest { name ->
+                    client.publishWithRetry(
+                        qosLevel,
+                        "$ROOT_TOPIC/$deviceId/$PLAYBACK_STATE_SUB_TOPIC",
+                        name
+                    )
+                }
             }
-            val positionInMillis = playbackState.positionInMillis
-            if (previousPlaybackState?.positionInMillis != positionInMillis) {
-                client.tryConnectAndPublish(
-                    qosLevel,
-                    "$ROOT_TOPIC/$deviceId/$PLAYBACK_POSITION_SUB_TOPIC",
-                    positionInMillis
-                )
+            launch {
+                playbackStateFlow.map { it.positionInMillis }.distinctUntilChanged()
+                    .collectLatest { positionInMillis ->
+                        client.publishWithRetry(
+                            qosLevel,
+                            "$ROOT_TOPIC/$deviceId/$PLAYBACK_POSITION_SUB_TOPIC",
+                            positionInMillis
+                        )
+                    }
             }
-            playbackState
         }
     }
 
@@ -159,24 +160,26 @@ class MainWorker(
         qosLevel: MQTTQoSLevel,
         deviceId: Int
     ) {
-        mediaMetadataFlow.fold(null as MQTTMediaMetadata?) { previousMediaMetadata, mediaMetadata ->
-            val title = mediaMetadata.title
-            if (previousMediaMetadata?.title != title) {
-                client.tryConnectAndPublish(
-                    qosLevel,
-                    "$ROOT_TOPIC/$deviceId/$MEDIA_TITLE_SUB_TOPIC",
-                    title
-                )
+        coroutineScope {
+            launch {
+                mediaMetadataFlow.map { it.title }.distinctUntilChanged().collectLatest { title ->
+                    client.publishWithRetry(
+                        qosLevel,
+                        "$ROOT_TOPIC/$deviceId/$MEDIA_TITLE_SUB_TOPIC",
+                        title
+                    )
+                }
             }
-            val durationInMillis = mediaMetadata.durationInMillis
-            if (previousMediaMetadata?.durationInMillis != durationInMillis) {
-                client.tryConnectAndPublish(
-                    qosLevel,
-                    "$ROOT_TOPIC/$deviceId/$MEDIA_DURATION_SUB_TOPIC",
-                    durationInMillis
-                )
+            launch {
+                mediaMetadataFlow.map { it.durationInMillis }.distinctUntilChanged()
+                    .collectLatest { durationInMillis ->
+                        client.publishWithRetry(
+                            qosLevel,
+                            "$ROOT_TOPIC/$deviceId/$MEDIA_DURATION_SUB_TOPIC",
+                            durationInMillis
+                        )
+                    }
             }
-            mediaMetadata
         }
     }
 

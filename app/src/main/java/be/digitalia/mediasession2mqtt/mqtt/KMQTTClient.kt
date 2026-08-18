@@ -39,7 +39,7 @@ class KMQTTClient(
             address = connectionSettings.hostname,
             port = connectionSettings.port,
             tls = null,
-            keepAlive = 0,
+            keepAlive = KEEP_ALIVE_SECONDS,
             webSocket = null,
             userName = username,
             password = password
@@ -54,25 +54,29 @@ class KMQTTClient(
 
     override suspend fun connectAndPublish(qosLevel: MQTTQoSLevel, topic: String, payload: String) {
         withContext(dispatcher) {
-            val client = try {
-                getConnectedClient(false)
+            try {
+                publishAndStep(getConnectedClient(false), qosLevel, topic, payload)
             } catch (e: Exception) {
                 if (e is CancellationException) {
                     throw e
                 }
                 // At that point we are already disconnected, no need to call disconnect()
-                // Try to auto-reconnect from scratch
-                getConnectedClient(true)
+                // The current connection may also be half-open after a silent network loss:
+                // in all cases, retry once from scratch with a new connection
+                ensureActive()
+                publishAndStep(getConnectedClient(true), qosLevel, topic, payload)
             }
-            ensureActive()
-            client.publish(
-                true,
-                Qos.entries[qosLevel.ordinal],
-                topic,
-                payload.encodeToByteArray().toUByteArray()
-            )
-            client.step()
         }
+    }
+
+    private fun publishAndStep(client: MQTTClient, qosLevel: MQTTQoSLevel, topic: String, payload: String) {
+        client.publish(
+            true,
+            Qos.entries[qosLevel.ordinal],
+            topic,
+            payload.encodeToByteArray().toUByteArray()
+        )
+        client.step()
     }
 
     override suspend fun disconnectQuietly() {
@@ -94,5 +98,11 @@ class KMQTTClient(
         override fun create(connectionSettings: MQTTConnectionSettings): MQTTPublishClient {
             return KMQTTClient(connectionSettings, dispatcher)
         }
+    }
+
+    companion object {
+        // Advertise a keep alive interval so the broker eventually drops dead connections
+        // instead of keeping half-open sessions alive forever
+        private const val KEEP_ALIVE_SECONDS = 60
     }
 }
