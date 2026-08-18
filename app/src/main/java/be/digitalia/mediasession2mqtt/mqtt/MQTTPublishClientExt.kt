@@ -24,8 +24,10 @@ suspend fun MQTTPublishClient.tryConnectAndPublish(
         true
     } catch (e: Exception) {
         if (e is CancellationException) {
+            android.util.Log.w("MediaSession2MQTT", "publish cancelled ($topic)", e)
             throw e
         }
+        android.util.Log.d("MediaSession2MQTT", "publish failed ($topic): $e")
         false
     }
 }
