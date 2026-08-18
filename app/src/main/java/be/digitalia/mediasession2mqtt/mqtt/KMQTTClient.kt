@@ -22,15 +22,11 @@ class KMQTTClient(
     private fun getConnectedClient(forceNewInstance: Boolean): MQTTClient {
         // Create the client lazily (simple implementation for single thread)
         var client = currentClient.takeUnless { forceNewInstance }
-            ?: run {
-                android.util.Log.d("MediaSession2MQTT", "creating new MQTT client (forceNew=$forceNewInstance)")
-                createClient().also { currentClient = it }
-            }
+            ?: createClient().also { currentClient = it }
         client.step()
         if (!client.isRunning()) {
             // A stopped client silently ignores step() and drops published messages,
             // so it must be detected and replaced with a new connected instance
-            android.util.Log.d("MediaSession2MQTT", "client not running, creating replacement")
             client = createClient().also { currentClient = it }
             client.step()
         }

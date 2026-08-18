@@ -1,6 +1,7 @@
 package be.digitalia.mediasession2mqtt
 
 import android.content.Context
+import android.util.Log
 import be.digitalia.mediasession2mqtt.homeassistant.Sensor
 import be.digitalia.mediasession2mqtt.homeassistant.createSensorDiscoveryConfiguration
 import be.digitalia.mediasession2mqtt.mediasession.CurrentMediaControllerDetector
@@ -74,34 +75,21 @@ class MainWorker(
 
     private suspend fun monitorSettings() {
         settingsProvider.connectionSettings.collectLatest { connectionSettings ->
-            android.util.Log.d(TAG, "connectionSettings emission: ${connectionSettings != null}")
             if (connectionSettings != null) {
                 val client = mqttClientFactory.create(connectionSettings)
                 try {
                     settingsProvider.messageSettings.collectLatest { (qosLevel, deviceId) ->
-                        android.util.Log.d(TAG, "messageSettings emission, starting publishers")
                         coroutineScope {
-                            launch { runPublisher("hassConfig") { publishHassConfigurationIfEnabled(client, qosLevel, deviceId) } }
-                            launch { runPublisher("applicationId") { publishApplicationId(client, qosLevel, deviceId) } }
-                            launch { runPublisher("playbackState") { publishPlaybackState(client, qosLevel, deviceId) } }
-                            launch { runPublisher("mediaMetadata") { publishMediaMetadata(client, qosLevel, deviceId) } }
+                            launch { publishHassConfigurationIfEnabled(client, qosLevel, deviceId) }
+                            launch { publishApplicationId(client, qosLevel, deviceId) }
+                            launch { publishPlaybackState(client, qosLevel, deviceId) }
+                            launch { publishMediaMetadata(client, qosLevel, deviceId) }
                         }
                     }
                 } finally {
                     client.disconnectQuietly()
                 }
             }
-        }
-    }
-
-    private suspend fun runPublisher(name: String, block: suspend () -> Unit) {
-        try {
-            block()
-        } catch (e: Throwable) {
-            android.util.Log.e(TAG, "publisher $name terminated", e)
-            throw e
-        } finally {
-            android.util.Log.w(TAG, "publisher $name exited")
         }
     }
 
@@ -224,13 +212,11 @@ class MainWorker(
         launch {
             while (true) {
                 try {
-                    android.util.Log.d(TAG, "$name starting")
                     block()
-                    android.util.Log.w(TAG, "$name completed unexpectedly")
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Throwable) {
-                    android.util.Log.e(TAG, "$name failed, restarting in ${RESTART_DELAY_MILLIS}ms", e)
+                    Log.e(TAG, "$name failed, restarting in ${RESTART_DELAY_MILLIS}ms", e)
                 }
                 delay(RESTART_DELAY_MILLIS)
             }
