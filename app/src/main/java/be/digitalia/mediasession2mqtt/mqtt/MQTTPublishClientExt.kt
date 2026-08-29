@@ -27,3 +27,22 @@ suspend fun MQTTPublishClient.tryConnectAndPublish(
         false
     }
 }
+
+/**
+ * Binary variant of [tryConnectAndPublish].
+ * Swallows exceptions and returns true in case of success.
+ */
+suspend fun MQTTPublishClient.tryConnectAndPublish(
+    qosLevel: MQTTQoSLevel,
+    topic: String,
+    payload: ByteArray
+): Boolean {
+    return try {
+        connectAndPublish(qosLevel, topic, payload)
+        true
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        false
+    }
+}

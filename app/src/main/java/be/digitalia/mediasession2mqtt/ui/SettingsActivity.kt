@@ -5,6 +5,7 @@ package be.digitalia.mediasession2mqtt.ui
 import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.preference.EditTextPreference
 import android.preference.ListPreference
@@ -17,6 +18,7 @@ import be.digitalia.mediasession2mqtt.inject.appGraph
 import be.digitalia.mediasession2mqtt.mediasession.CurrentMediaControllerDetector
 import be.digitalia.mediasession2mqtt.mqtt.MQTTPublishClient
 import be.digitalia.mediasession2mqtt.mqtt.testConnection
+import be.digitalia.mediasession2mqtt.mqttmediaplayer.ArtworkRepository
 import be.digitalia.mediasession2mqtt.settings.PreferenceKeys
 import be.digitalia.mediasession2mqtt.settings.SettingsProvider
 import dev.zacsweers.metro.Inject
@@ -29,11 +31,13 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @SuppressLint("ExportedPreferenceActivity")
 class SettingsActivity : PreferenceActivity() {
@@ -44,6 +48,8 @@ class SettingsActivity : PreferenceActivity() {
     private lateinit var mqttClientFactory: MQTTPublishClient.Factory
     @Inject
     private lateinit var currentMediaControllerDetector: CurrentMediaControllerDetector
+    @Inject
+    private lateinit var artworkRepository: ArtworkRepository
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val statusSummary: Flow<CharSequence> by lazy(LazyThreadSafetyMode.NONE) {
@@ -188,11 +194,23 @@ class SettingsActivity : PreferenceActivity() {
         super.onStop()
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     private fun setupStatus(coroutineScope: CoroutineScope) {
-        val statusPreference = findPreference(PreferenceKeys.STATUS)
+        val statusPreference = findPreference(PreferenceKeys.STATUS) as ArtworkStatusPreference
+
         coroutineScope.launch {
             statusSummary.collect {
                 statusPreference.summary = it
+            }
+        }
+        coroutineScope.launch {
+            artworkRepository.artwork.collectLatest { artwork ->
+                val bitmap = withContext(Dispatchers.Default) {
+                    artwork
+                        ?.takeIf { it.isNotEmpty() }
+                        ?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
+                }
+                statusPreference.setArtwork(bitmap)
             }
         }
     }

@@ -10,7 +10,11 @@ interface MQTTPublishClient {
      * Connect if not currently connected, and publish.
      * Throw an Exception in case of any failure.
      */
-    suspend fun connectAndPublish(qosLevel: MQTTQoSLevel, topic: String, payload: String)
+    suspend fun connectAndPublish(qosLevel: MQTTQoSLevel, topic: String, payload: ByteArray)
+
+    suspend fun connectAndPublish(qosLevel: MQTTQoSLevel, topic: String, payload: String) {
+        connectAndPublish(qosLevel, topic, payload.encodeToByteArray())
+    }
 
     /**
      * Disconnect if currently connected.

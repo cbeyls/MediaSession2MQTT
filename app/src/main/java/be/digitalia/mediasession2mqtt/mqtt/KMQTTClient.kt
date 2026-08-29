@@ -53,7 +53,7 @@ class KMQTTClient(
         }
     }
 
-    override suspend fun connectAndPublish(qosLevel: MQTTQoSLevel, topic: String, payload: String) {
+    override suspend fun connectAndPublish(qosLevel: MQTTQoSLevel, topic: String, payload: ByteArray) {
         withContext(dispatcher) {
             var client = currentClient?.takeIf { it.isRunning() }
             if (client != null) {
@@ -77,12 +77,12 @@ class KMQTTClient(
         }
     }
 
-    private fun MQTTClient.publishAndStep(qosLevel: MQTTQoSLevel, topic: String, payload: String) {
+    private fun MQTTClient.publishAndStep(qosLevel: MQTTQoSLevel, topic: String, payload: ByteArray) {
         publish(
             true,
             Qos.entries[qosLevel.ordinal],
             topic,
-            payload.encodeToByteArray().toUByteArray()
+            payload.toUByteArray()
         )
         step()
         check(isRunning()) { "MQTT connection lost while publishing" }

@@ -58,6 +58,26 @@ private fun JsonWriter.writeSensor(
     endObject()
 }
 
+private fun JsonWriter.writeImage(
+    deviceId: Int,
+    imageTopic: String
+) {
+    beginObject()
+
+    name("name")
+    value("Media Artwork")
+    name("unique_id")
+    value("mediasession_${deviceId}_media_artwork")
+    name("image_topic")
+    value(imageTopic)
+    name("content_type")
+    value("image/png")
+    name("device")
+    writeDeviceInfo(deviceId)
+
+    endObject()
+}
+
 fun createSensorDiscoveryConfiguration(deviceId: Int, sensor: Sensor, sensorTopic: String): String {
     val writer = StringWriter()
     JsonWriter(writer).use {
@@ -69,6 +89,17 @@ fun createSensorDiscoveryConfiguration(deviceId: Int, sensor: Sensor, sensorTopi
             sensorTopic = sensorTopic,
             sensorDeviceClass = sensor.deviceClass,
             sensorUnitOfMeasurement = sensor.unitOfMeasurement
+        )
+    }
+    return writer.toString()
+}
+
+fun createImageDiscoveryConfiguration(deviceId: Int, imageTopic: String): String {
+    val writer = StringWriter()
+    JsonWriter(writer).use {
+        it.writeImage(
+            deviceId = deviceId,
+            imageTopic = imageTopic
         )
     }
     return writer.toString()

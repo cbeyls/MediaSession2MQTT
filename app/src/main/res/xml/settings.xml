@@ -60,7 +60,7 @@
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/settings_info">
-        <Preference
+        <be.digitalia.mediasession2mqtt.ui.ArtworkStatusPreference
             android:key="status"
             android:title="@string/settings_status" />
         <Preference
