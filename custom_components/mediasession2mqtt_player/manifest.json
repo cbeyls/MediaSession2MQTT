@@ -1,0 +1,11 @@
+{
+  "domain": "mediasession2mqtt_player",
+  "name": "MediaSession2MQTT Player",
+  "version": "0.1.0",
+  "documentation": "https://github.com/qweritos/MediaSession2MQTT#home-assistant-media-player",
+  "issue_tracker": "https://github.com/qweritos/MediaSession2MQTT/issues",
+  "codeowners": ["@qweritos"],
+  "iot_class": "local_push",
+  "dependencies": ["mqtt"],
+  "requirements": []
+}

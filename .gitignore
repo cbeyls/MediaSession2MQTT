@@ -21,3 +21,7 @@ local.properties
 
 # Kotlin
 .kotlin
+
+# Python
+__pycache__/
+*.pyc

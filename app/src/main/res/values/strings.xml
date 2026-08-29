@@ -6,6 +6,8 @@
     <string name="settings_enabled">Enabled</string>
     <string name="settings_hass_integration_enabled">Enable Home Assistant integration</string>
     <string name="settings_hass_integration_enabled_summary">Publish MQTT Discovery configuration</string>
+    <string name="settings_media_control_enabled">Allow media control</string>
+    <string name="settings_media_control_enabled_summary">Accept MQTT media-control commands in the background. May increase power consumption.</string>
 
     <string name="settings_server_connection">MQTT server connection</string>
     <string name="settings_protocol_version">Protocol version</string>
@@ -55,4 +57,5 @@
     <string name="status_current_mediasession">In progress: %1$s</string>
 
     <string name="error_notification_listener_settings_activity_not_found">System notification access settings screen not found.\nPlease manually allow MediaSession2MQTT to access notifications using ADB.</string>
+    <string name="error_battery_optimization_settings_activity_not_found">Battery optimization settings screen not found.</string>
 </resources>

@@ -13,6 +13,16 @@ interface MQTTPublishClient {
     suspend fun connectAndPublish(qosLevel: MQTTQoSLevel, topic: String, payload: String)
 
     /**
+     * Connect, subscribe to a topic and keep receiving messages until cancelled.
+     * Throw an Exception if the connection cannot be established or is lost.
+     */
+    suspend fun listen(
+        qosLevel: MQTTQoSLevel,
+        topicFilter: String,
+        onMessage: (topic: String, payload: String) -> Unit
+    )
+
+    /**
      * Disconnect if currently connected.
      * Exceptions must be swallowed.
      * Implementation must be non-cancellable in order to properly disconnect in case of cancellation.

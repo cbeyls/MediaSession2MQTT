@@ -3,8 +3,11 @@ package be.digitalia.mediasession2mqtt.mqtt
 import be.digitalia.mediasession2mqtt.BuildConfig
 import io.github.davidepianca98.MQTTClient
 import io.github.davidepianca98.mqtt.MQTTVersion
+import io.github.davidepianca98.mqtt.Subscription
 import io.github.davidepianca98.mqtt.packets.Qos
+import io.github.davidepianca98.mqtt.packets.mqtt.MQTTPublish
 import io.github.davidepianca98.mqtt.packets.mqttv5.ReasonCode
+import io.github.davidepianca98.mqtt.packets.mqttv5.SubscriptionOptions
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.NonCancellable
@@ -19,7 +22,7 @@ class KMQTTClient(
 
     private var currentClient: MQTTClient? = null
 
-    private fun createClient(): MQTTClient {
+    private fun createClient(onPublishReceived: (MQTTPublish) -> Unit = {}): MQTTClient {
         val mqttVersion = when (connectionSettings.protocolVersion) {
             MQTTConnectionSettings.ProtocolVersion.MQTT3_1_1 -> MQTTVersion.MQTT3_1_1
             MQTTConnectionSettings.ProtocolVersion.MQTT5 -> MQTTVersion.MQTT5
@@ -39,7 +42,8 @@ class KMQTTClient(
             connackTimeout = 10,
             connectTimeout = 10,
             debugLog = BuildConfig.DEBUG,
-        ) { }.also {
+            publishReceived = onPublishReceived
+        ).also {
             currentClient = it
         }
     }
@@ -74,6 +78,44 @@ class KMQTTClient(
             client = createClient()
             ensureActive()
             client.publishAndStep(qosLevel, topic, payload)
+        }
+    }
+
+    override suspend fun listen(
+        qosLevel: MQTTQoSLevel,
+        topicFilter: String,
+        onMessage: (topic: String, payload: String) -> Unit
+    ) {
+        withContext(dispatcher) {
+            if (currentClient != null) {
+                disconnectQuietly()
+            }
+            val client = createClient { publish ->
+                if (!publish.retain) {
+                    publish.payload
+                        ?.toByteArray()
+                        ?.decodeToString()
+                        ?.let { payload -> onMessage(publish.topicName, payload) }
+                }
+            }
+            client.step()
+            ensureActive()
+            client.subscribe(
+                listOf(
+                    Subscription(
+                        topicFilter = topicFilter,
+                        options = SubscriptionOptions(qos = Qos.entries[qosLevel.ordinal])
+                    )
+                )
+            )
+            client.step()
+
+            while (client.isRunning()) {
+                ensureActive()
+                client.step()
+            }
+
+            error("MQTT subscription connection lost")
         }
     }
 

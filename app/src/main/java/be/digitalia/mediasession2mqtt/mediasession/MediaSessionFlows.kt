@@ -42,3 +42,18 @@ val MediaController.metadataFlow: Flow<MediaMetadata?>
             emit(metadata)
         }
     }
+
+val MediaController.playbackInfoFlow: Flow<MediaController.PlaybackInfo?>
+    get() {
+        return callbackFlow {
+            val callback = object : MediaController.Callback() {
+                override fun onAudioInfoChanged(info: MediaController.PlaybackInfo) {
+                    trySend(info)
+                }
+            }
+            registerCallback(callback)
+            awaitClose { unregisterCallback(callback) }
+        }.conflate().onStart {
+            emit(playbackInfo)
+        }
+    }

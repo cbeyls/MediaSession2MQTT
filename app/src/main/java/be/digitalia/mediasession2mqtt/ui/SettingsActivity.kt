@@ -5,7 +5,10 @@ package be.digitalia.mediasession2mqtt.ui
 import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.os.Build
+import android.os.PowerManager
 import android.preference.EditTextPreference
 import android.preference.ListPreference
 import android.preference.PreferenceActivity
@@ -92,8 +95,42 @@ class SettingsActivity : PreferenceActivity() {
         setupEditTextPreferenceSimpleSummaryProvider(PreferenceKeys.DEVICE_ID, clearTextFilter)
 
         setupConnectionTest()
+        setupMediaControlPreference()
         setupNotificationListenerLink()
         populateVersion()
+    }
+
+    private fun setupMediaControlPreference() {
+        findPreference(PreferenceKeys.MEDIA_CONTROL_ENABLED)?.setOnPreferenceChangeListener { _, newValue ->
+            if (newValue == true) {
+                requestBatteryOptimizationExemptionIfNeeded()
+            }
+            true
+        }
+    }
+
+    private fun requestBatteryOptimizationExemptionIfNeeded() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return
+        val powerManager = getSystemService(POWER_SERVICE) as PowerManager
+        if (powerManager.isIgnoringBatteryOptimizations(packageName)) return
+
+        val requestIntent = Intent(
+            Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+            Uri.parse("package:$packageName")
+        )
+        try {
+            startActivity(requestIntent)
+        } catch (_: ActivityNotFoundException) {
+            try {
+                startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+            } catch (_: ActivityNotFoundException) {
+                Toast.makeText(
+                    this,
+                    R.string.error_battery_optimization_settings_activity_not_found,
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
     }
 
     private fun setupListPreferenceSimpleSummaryProvider(

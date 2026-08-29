@@ -113,9 +113,30 @@ After rebooting your TCL TV, you should see the session status being updated on 
 
 This app provides an integration for Home Assistant since version 1.1.0. Check the box "Enable Home Assistant integration" in the settings screen and the MQTT Discovery configuration will also be published, allowing Home Assistant to detect and configure MediaSession2MQTT as a new device automatically.
 
+## Home Assistant media player
+
+This repository also contains the `mediasession2mqtt_player` Home Assistant custom integration, installable through HACS. It communicates directly with MediaSession2MQTT over MQTT; the Home Assistant Android Companion app is not required.
+
+In MediaSession2MQTT, configure the MQTT broker and enable **Allow media control**. Media control is disabled by default. On Android 6 and newer, when control is enabled the app checks whether battery optimization can suspend it in the background. If the app is already exempt, nothing is shown; otherwise Android asks whether to allow unrestricted background operation.
+
+[![Open your Home Assistant instance and open this repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=qweritos&repository=MediaSession2MQTT&category=integration)
+
+Alternatively, add `https://github.com/qweritos/MediaSession2MQTT` in **HACS → Integrations → Custom repositories** with category **Integration**. Install **MediaSession2MQTT Player**, restart Home Assistant, then add:
+
+```yaml
+media_player:
+  - platform: mediasession2mqtt_player
+    name: Android Media
+    device_id: 1
+```
+
+`device_id` must match the device id configured in the Android app. The helper subscribes directly to `mediaSession/{deviceId}/...` state topics and publishes controls to `mediaSession/{deviceId}/command/...`. No per-sensor entity configuration is required.
+
+The helper exposes only controls reported as supported by the active Android MediaSession. Depending on the player, these can include play, pause, stop, next, previous, seek, volume set/step and mute.
+
 ## The MQTT API
 
-This application is designed to only push state messages and not listen to MQTT commands. The MQTT connection is kept open as long as possible and no keepalive packets are sent. If the connection gets interrupted for any reason, it will be automatically re-established lazily when the next MQTT message needs to be published.
+The application publishes MediaSession state and listens for non-retained MQTT media-control commands. The MQTT connection is kept open as long as possible and is automatically re-established when necessary.
 
 The application publishes the following topics to the MQTT broker (replace `{deviceId}` with your actual device id which is `1` by default):
 
@@ -154,6 +175,42 @@ Note that many applications don't report any title, for example: Netflix, Disney
 ### mediaSession/{deviceId}/mediaDuration
 
 The duration of the currently playing or paused media in milliseconds, or an empty String (`""`) if no media is currently playing or paused or the duration is unavailable.
+
+### mediaSession/{deviceId}/playbackActions
+
+The Android `PlaybackState.actions` bitmask reported by the active MediaSession. Consumers can use it to expose only controls supported by the current player.
+
+### mediaSession/{deviceId}/volumeLevel
+
+The current MediaSession volume normalized to the range `0.0` to `1.0`, or an empty string when unavailable.
+
+### mediaSession/{deviceId}/volumeControl
+
+The MediaSession volume-control type: `absolute`, `relative`, `fixed`, or an empty string when unavailable.
+
+### mediaSession/{deviceId}/volumeMuted
+
+Whether the active output is currently muted. Device-side media volume and mute changes are published back to MQTT so Home Assistant stays synchronized with hardware volume buttons and the Android system UI.
+
+### mediaSession/{deviceId}/mediaControlEnabled
+
+`true` when **Allow media control** is enabled in the Android app, otherwise `false`. The Home Assistant helper uses this to hide control features when remote control is disabled.
+
+### mediaSession/{deviceId}/seek
+
+Legacy seek command. Publish an absolute playback position in milliseconds to seek the active MediaSession. Messages must not be retained.
+
+### mediaSession/{deviceId}/command/{command}
+
+Publish a non-retained message to one of these command topics:
+
+- `play`, `pause`, `playPause`, `stop`
+- `next`, `previous`
+- `fastForward`, `rewind`
+- `seek` — payload is the absolute position in milliseconds
+- `volume` — payload is a normalized volume from `0.0` to `1.0`
+- `volumeUp`, `volumeDown`
+- `mute`, `unmute`
 
 ## A note about the Netflix app
 
