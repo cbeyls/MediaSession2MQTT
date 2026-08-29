@@ -117,7 +117,7 @@ This app provides an integration for Home Assistant since version 1.1.0. Check t
 
 This application is designed to only push state messages and not listen to MQTT commands. The MQTT connection is kept open as long as possible and no keepalive packets are sent. If the connection gets interrupted for any reason, it will be automatically re-established lazily when the next MQTT message needs to be published.
 
-The application publishes the following 3 topics to the MQTT broker (replace `{deviceId}` with your actual device id which is `1` by default):
+The application publishes the following topics to the MQTT broker (replace `{deviceId}` with your actual device id which is `1` by default):
 
 ### mediaSession/{deviceId}/playbackState
 The current playback state of the player connected to the current MediaSession, if any. Can be one of the following values: `idle`, `playing`, `paused`.
