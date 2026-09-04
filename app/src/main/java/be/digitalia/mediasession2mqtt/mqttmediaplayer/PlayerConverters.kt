@@ -19,6 +19,7 @@ fun PlaybackState.toMQTTPlaybackStateOrNull(): MQTTPlaybackState? = when (state)
 /**
  * Calculate the time difference between two playback positions by taking the position update time into account.
  * If any of the states is not playing, return 0.
+ * If the playback position transitions from/to PLAYBACK_POSITION_UNKNOWN, return Long.MAX_VALUE.
  * The calculation assumes that old and new playback speeds are the same and a change of playback speed
  * will create an artificial drift.
  */
@@ -26,7 +27,14 @@ fun getPlayingPositionDrift(old: PlaybackState?, new: PlaybackState?): Long {
     if (old?.state != PlaybackState.STATE_PLAYING || new?.state != PlaybackState.STATE_PLAYING) {
         return 0L
     }
-    return new.position - old.position -
+    val oldPosition = old.position
+    val newPosition = new.position
+    if ((oldPosition == PlaybackState.PLAYBACK_POSITION_UNKNOWN) !=
+        (newPosition == PlaybackState.PLAYBACK_POSITION_UNKNOWN)
+    ) {
+        return Long.MAX_VALUE
+    }
+    return newPosition - oldPosition -
             ((new.lastPositionUpdateTime - old.lastPositionUpdateTime) * new.playbackSpeed).toLong()
 }
 
