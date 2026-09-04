@@ -2,6 +2,7 @@ package be.digitalia.mediasession2mqtt
 
 import android.content.Context
 import android.media.session.PlaybackState
+import be.digitalia.mediasession2mqtt.connectivity.ConnectivityChecker
 import be.digitalia.mediasession2mqtt.homeassistant.Sensor
 import be.digitalia.mediasession2mqtt.homeassistant.createSensorDiscoveryConfiguration
 import be.digitalia.mediasession2mqtt.mediasession.CurrentMediaControllerDetector
@@ -29,6 +30,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -42,8 +44,9 @@ import kotlin.math.abs
 class MainWorker(
     private val context: Context,
     private val currentMediaControllerDetector: CurrentMediaControllerDetector,
+    private val connectivityChecker: ConnectivityChecker,
     private val settingsProvider: SettingsProvider,
-    private val mqttClientFactory: MQTTPublishClient.Factory
+    private val mqttClientFactory: MQTTPublishClient.Factory,
 ) {
     private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
@@ -84,23 +87,28 @@ class MainWorker(
         }.buffer(Channel.RENDEZVOUS)
 
     private suspend fun monitorSettings() {
-        settingsProvider.connectionSettings.collectLatest { connectionSettings ->
-            if (connectionSettings != null) {
-                val client = mqttClientFactory.create(connectionSettings)
-                try {
-                    settingsProvider.messageSettings.collectLatest { (qosLevel, deviceId) ->
-                        coroutineScope {
-                            launch { publishHassConfigurationIfEnabled(client, qosLevel, deviceId) }
-                            launch { publishApplicationId(client, qosLevel, deviceId) }
-                            launch { publishPlaybackState(client, qosLevel, deviceId) }
-                            launch { publishMediaMetadata(client, qosLevel, deviceId) }
+        // The publishing coroutine is only active when settings are valid and the active network is connected
+        settingsProvider.connectionSettings
+            .combine(connectivityChecker.isActiveNetworkConnectedFlow) { connectionSettings, isConnected ->
+                if (isConnected) connectionSettings else null
+            }
+            .collectLatest { connectionSettings ->
+                if (connectionSettings != null) {
+                    val client = mqttClientFactory.create(connectionSettings)
+                    try {
+                        settingsProvider.messageSettings.collectLatest { (qosLevel, deviceId) ->
+                            coroutineScope {
+                                launch { publishHassConfigurationIfEnabled(client, qosLevel, deviceId) }
+                                launch { publishApplicationId(client, qosLevel, deviceId) }
+                                launch { publishPlaybackState(client, qosLevel, deviceId) }
+                                launch { publishMediaMetadata(client, qosLevel, deviceId) }
+                            }
                         }
+                    } finally {
+                        client.disconnectQuietly()
                     }
-                } finally {
-                    client.disconnectQuietly()
                 }
             }
-        }
     }
 
     private suspend fun publishHassConfigurationIfEnabled(
