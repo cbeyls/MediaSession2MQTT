@@ -1,5 +1,8 @@
 package be.digitalia.mediasession2mqtt.inject
 
+import android.annotation.SuppressLint
+import android.content.Context
+import android.provider.Settings
 import be.digitalia.mediasession2mqtt.mqtt.KMQTTClient
 import be.digitalia.mediasession2mqtt.mqtt.MQTTPublishClient
 import dev.zacsweers.metro.AppScope
@@ -15,9 +18,13 @@ import java.util.concurrent.Executors
 object MQTTPublishClientProviders {
     @Provides
     @SingleIn(AppScope::class)
-    fun provideMQTTPublishClientFactory(): MQTTPublishClient.Factory {
+    @SuppressLint("HardwareIds")
+    fun provideMQTTPublishClientFactory(applicationContext: Context): MQTTPublishClient.Factory {
+        // ANDROID_ID is unique per device and app signing key, and stable across app restarts
+        val androidId = Settings.Secure.getString(applicationContext.contentResolver, Settings.Secure.ANDROID_ID)
         // Use a single thread per client because the KMQTT client is not fully thread safe
         return KMQTTClient.Factory(
+            stableClientId = "ms2mqtt_${androidId.orEmpty()}",
             dispatcherProvider = { Executors.newSingleThreadExecutor().asCoroutineDispatcher() }
         )
     }

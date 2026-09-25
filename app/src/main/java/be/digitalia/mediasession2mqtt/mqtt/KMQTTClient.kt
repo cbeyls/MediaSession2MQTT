@@ -15,6 +15,7 @@ import kotlinx.coroutines.withContext
 class KMQTTClient(
     private val connectionSettings: MQTTConnectionSettings,
     private val availability: MQTTAvailability?,
+    private val stableClientId: String,
     private val dispatcher: CoroutineDispatcher
 ) : MQTTPublishClient {
 
@@ -36,6 +37,10 @@ class KMQTTClient(
             // Keep-alive is only needed to let the broker detect lost connections and publish the last will
             keepAlive = if (availability != null) KEEP_ALIVE_SECONDS else 0,
             webSocket = null,
+            // With availability, use a stable client id so the broker immediately closes the previous session
+            // (and publishes its last will) when reconnecting, before the new online message.
+            // With a random client id, the stale session expires later and its offline will overwrites online.
+            clientId = if (availability != null) stableClientId else null,
             userName = username,
             password = password,
             willTopic = availability?.topic,
@@ -143,12 +148,15 @@ class KMQTTClient(
         }
     }
 
-    class Factory(private val dispatcherProvider: () -> CoroutineDispatcher) : MQTTPublishClient.Factory {
+    class Factory(
+        private val stableClientId: String,
+        private val dispatcherProvider: () -> CoroutineDispatcher
+    ) : MQTTPublishClient.Factory {
         override fun create(
             connectionSettings: MQTTConnectionSettings,
             availability: MQTTAvailability?
         ): MQTTPublishClient {
-            return KMQTTClient(connectionSettings, availability, dispatcherProvider())
+            return KMQTTClient(connectionSettings, availability, stableClientId, dispatcherProvider())
         }
     }
 
