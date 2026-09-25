@@ -45,16 +45,20 @@ class ForegroundAppResolver(private val context: Context) {
         }
         val usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
         val now = System.currentTimeMillis()
-        val events = usageStatsManager.queryEvents(now - USAGE_EVENTS_WINDOW_MILLIS, now)
+        // Use an unbounded end time: if the device clock once jumped into the future, the current
+        // usage stats bucket starts in the future and recent events are only returned if the range overlaps it
+        val events = usageStatsManager.queryEvents(now - USAGE_EVENTS_WINDOW_MILLIS, Long.MAX_VALUE)
         val event = UsageEvents.Event()
         var packageName: String? = null
+        var eventsCount = 0
         while (events.getNextEvent(event)) {
+            eventsCount++
             @Suppress("DEPRECATION")
             if (event.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND) {
                 packageName = event.packageName
             }
         }
-        Log.i(TAG, "Foreground package: $packageName")
+        Log.i(TAG, "Foreground package: $packageName ($eventsCount usage events)")
         packageName
     }
 
