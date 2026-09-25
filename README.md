@@ -125,7 +125,7 @@ After rebooting your TCL TV, you should see the session status being updated on 
 
 This app provides an integration for Home Assistant since version 1.1.0. Check the box "Enable Home Assistant integration" in the settings screen and the MQTT Discovery configuration will also be published, allowing Home Assistant to detect and configure MediaSession2MQTT as a new device automatically.
 
-When a topic prefix is configured (e.g. `androidtv/bedroom`), the Home Assistant device is named after its last segment (e.g. `bedroom`), which creates entities like `binary_sensor.bedroom_media_actif`.
+When a topic prefix is configured (e.g. `androidtv/bedroom`), the Home Assistant device is named after its last segment (e.g. `bedroom`), which creates entities like `binary_sensor.bedroom_media_active`.
 All entities use the availability topic and become unavailable when the device is disconnected.
 
 ## The MQTT API

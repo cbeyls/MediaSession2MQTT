@@ -375,7 +375,7 @@ class MainWorker(
         )
         private val HASS_MEDIA_SENSORS = listOf(
             Sensor(
-                name = "Média actif",
+                name = "Media Active",
                 serializedName = "media_active",
                 icon = "mdi:play-circle",
                 subTopic = MEDIA_ACTIVE_SUB_TOPIC,
@@ -384,37 +384,37 @@ class MainWorker(
                 payloadOff = PAYLOAD_OFF
             ),
             Sensor(
-                name = "État média",
+                name = "Media State",
                 serializedName = "media_state",
                 icon = "mdi:play-pause",
                 subTopic = MEDIA_STATE_SUB_TOPIC
             ),
             Sensor(
-                name = "Application média",
+                name = "Media Application",
                 serializedName = "media_app",
                 icon = "mdi:application",
                 subTopic = MEDIA_APP_SUB_TOPIC
             ),
             Sensor(
-                name = "Package média",
+                name = "Media Package",
                 serializedName = "media_package",
                 icon = "mdi:package-variant",
                 subTopic = MEDIA_PACKAGE_SUB_TOPIC
             ),
             Sensor(
-                name = "Titre média",
+                name = "Current Media Title",
                 serializedName = "media_current_title",
                 icon = "mdi:information",
                 subTopic = MEDIA_CURRENT_TITLE_SUB_TOPIC
             ),
             Sensor(
-                name = "Artiste média",
+                name = "Media Artist",
                 serializedName = "media_artist",
                 icon = "mdi:account-music",
                 subTopic = MEDIA_ARTIST_SUB_TOPIC
             ),
             Sensor(
-                name = "Méthode de détection",
+                name = "Detection Method",
                 serializedName = "media_method",
                 icon = "mdi:radar",
                 subTopic = MEDIA_METHOD_SUB_TOPIC
