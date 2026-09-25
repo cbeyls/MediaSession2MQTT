@@ -90,6 +90,7 @@ class SettingsActivity : PreferenceActivity() {
 
         setupListPreferenceSimpleSummaryProvider(PreferenceKeys.QOS_LEVEL, clearTextFilter)
         setupEditTextPreferenceSimpleSummaryProvider(PreferenceKeys.DEVICE_ID, clearTextFilter)
+        setupEditTextPreferenceSimpleSummaryProvider(PreferenceKeys.TOPIC_PREFIX, clearTextFilter)
 
         setupConnectionTest()
         setupNotificationListenerLink()

@@ -9,6 +9,7 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.os.Build
+import android.util.Log
 import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -40,11 +41,20 @@ class ConnectivityChecker(
         // Modern code using ConnectivityManager.NetworkCallback
         callbackFlow {
             val callback = object : ConnectivityManager.NetworkCallback() {
+                // The default network callback is only invoked for the current default network,
+                // so it is connected. Don't read activeNetworkInfo here: at boot it may not be updated yet
+                // when the callback is invoked, which would leave the flow stuck in the disconnected state.
+                override fun onAvailable(network: Network) {
+                    Log.i(TAG, "Default network available")
+                    trySend(true)
+                }
+
                 override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
-                    trySend(isActiveNetworkConnected)
+                    trySend(true)
                 }
 
                 override fun onLost(network: Network) {
+                    Log.i(TAG, "Default network lost")
                     trySend(false)
                 }
             }
@@ -79,4 +89,8 @@ class ConnectivityChecker(
         .conflate()
         .onStart { emit(isActiveNetworkConnected) }
         .distinctUntilChanged()
+
+    companion object {
+        private const val TAG = "ConnectivityChecker"
+    }
 }

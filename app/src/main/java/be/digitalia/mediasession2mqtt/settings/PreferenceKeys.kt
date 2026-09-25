@@ -13,6 +13,7 @@ object PreferenceKeys {
 
     const val QOS_LEVEL = "qos_level"
     const val DEVICE_ID = "device_id"
+    const val TOPIC_PREFIX = "topic_prefix"
 
     const val STATUS = "status"
     const val OPEN_NOTIFICATION_LISTENER_SETTINGS = "open_notification_listener_settings"

@@ -14,6 +14,7 @@ import kotlinx.coroutines.withContext
 @OptIn(ExperimentalUnsignedTypes::class)
 class KMQTTClient(
     private val connectionSettings: MQTTConnectionSettings,
+    private val availability: MQTTAvailability?,
     private val dispatcher: CoroutineDispatcher
 ) : MQTTPublishClient {
 
@@ -32,10 +33,15 @@ class KMQTTClient(
             address = connectionSettings.hostname,
             port = connectionSettings.port,
             tls = null,
-            keepAlive = 0,
+            // Keep-alive is only needed to let the broker detect lost connections and publish the last will
+            keepAlive = if (availability != null) KEEP_ALIVE_SECONDS else 0,
             webSocket = null,
             userName = username,
             password = password,
+            willTopic = availability?.topic,
+            willPayload = availability?.offlinePayload?.encodeToByteArray()?.toUByteArray(),
+            willRetain = availability != null,
+            willQos = Qos.entries[(availability?.qosLevel ?: MQTTQoSLevel.QOS0).ordinal],
             connackTimeout = 10,
             connectTimeout = 10,
             debugLog = BuildConfig.DEBUG,
@@ -71,10 +77,40 @@ class KMQTTClient(
             }
 
             // Not connected yet or disconnected: connect from scratch and publish
-            client = createClient()
+            client = createClientAndPublishOnline()
             ensureActive()
             client.publishAndStep(qosLevel, topic, payload)
         }
+    }
+
+    override suspend fun keepAlive() {
+        withContext(dispatcher) {
+            val client = currentClient?.takeIf { it.isRunning() }
+            if (client != null) {
+                try {
+                    // Sends a ping request if the keep-alive delay is expired
+                    client.step()
+                    check(client.isRunning()) { "MQTT connection lost" }
+                    return@withContext
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (_: Exception) {
+                    // At that point we are already disconnected, no need to call disconnect()
+                }
+            }
+            createClientAndPublishOnline()
+        }
+    }
+
+    private fun createClientAndPublishOnline(): MQTTClient {
+        val client = createClient()
+        // Process the CONNACK first, otherwise the next publication is only sent on the following step
+        client.step()
+        check(client.isRunning()) { "MQTT connection failed" }
+        availability?.let {
+            client.publishAndStep(it.qosLevel, it.topic, it.onlinePayload)
+        }
+        return client
     }
 
     private fun MQTTClient.publishAndStep(qosLevel: MQTTQoSLevel, topic: String, payload: String) {
@@ -94,6 +130,10 @@ class KMQTTClient(
                 // If running is false, we are already disconnected
                 if (client.isRunning()) {
                     try {
+                        // The last will is not published by the broker after a graceful disconnection
+                        availability?.let {
+                            client.publishAndStep(it.qosLevel, it.topic, it.offlinePayload)
+                        }
                         client.disconnect(ReasonCode.SUCCESS)
                     } catch (_: Exception) {
                     }
@@ -104,8 +144,21 @@ class KMQTTClient(
     }
 
     class Factory(private val dispatcherProvider: () -> CoroutineDispatcher) : MQTTPublishClient.Factory {
-        override fun create(connectionSettings: MQTTConnectionSettings): MQTTPublishClient {
-            return KMQTTClient(connectionSettings, dispatcherProvider())
+        override fun create(
+            connectionSettings: MQTTConnectionSettings,
+            availability: MQTTAvailability?
+        ): MQTTPublishClient {
+            return KMQTTClient(connectionSettings, availability, dispatcherProvider())
         }
+    }
+
+    companion object {
+        /**
+         * KMQTT only sends a ping when stepping between 90% and 100% of the keep-alive period
+         * since the last activity, and closes the connection after that.
+         * keepAlive() must be called at an interval shorter than 10% of this period.
+         */
+        const val KEEP_ALIVE_SECONDS = 120
+        const val KEEP_ALIVE_STEP_INTERVAL_MILLIS = 10_000L
     }
 }

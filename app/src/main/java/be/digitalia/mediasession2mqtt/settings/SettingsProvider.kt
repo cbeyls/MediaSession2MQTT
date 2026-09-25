@@ -58,9 +58,11 @@ class SettingsProvider(context: Context) {
                 ?: DEFAULT_QOS_LEVEL
             val deviceId = getString(PreferenceKeys.DEVICE_ID, null).orEmpty().toIntOrNull()
                 ?: DEFAULT_DEVICE_ID
+            val topicPrefix = getString(PreferenceKeys.TOPIC_PREFIX, null).orEmpty().trim().trim('/')
             return MessageSettings(
                 qosLevel = MQTTQoSLevel.entries[qosLevel],
-                deviceId = deviceId
+                deviceId = deviceId,
+                topicPrefix = topicPrefix
             )
         }
 
@@ -77,7 +79,12 @@ class SettingsProvider(context: Context) {
             { getBoolean(PreferenceKeys.HASS_INTEGRATION_ENABLED, false) })
 
     val messageSettings: Flow<MessageSettings>
-        get() = sharedPreferences.getAsFlow({ key -> key == PreferenceKeys.DEVICE_ID || key == PreferenceKeys.QOS_LEVEL },
+        get() = sharedPreferences.getAsFlow({ key ->
+            when (key) {
+                PreferenceKeys.DEVICE_ID, PreferenceKeys.QOS_LEVEL, PreferenceKeys.TOPIC_PREFIX -> true
+                else -> false
+            }
+        },
             { messageSettings }).distinctUntilChanged()
 
     companion object {

@@ -13,6 +13,20 @@ suspend fun MQTTPublishClient.testConnection() {
 /**
  * Swallows exceptions and returns true in case of success
  */
+suspend fun MQTTPublishClient.tryKeepAlive(): Boolean {
+    return try {
+        keepAlive()
+        true
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        false
+    }
+}
+
+/**
+ * Swallows exceptions and returns true in case of success
+ */
 suspend fun MQTTPublishClient.tryConnectAndPublish(
     qosLevel: MQTTQoSLevel,
     topic: String,
