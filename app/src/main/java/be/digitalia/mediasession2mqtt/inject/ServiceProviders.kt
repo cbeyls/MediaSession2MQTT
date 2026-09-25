@@ -1,6 +1,7 @@
 package be.digitalia.mediasession2mqtt.inject
 
 import android.content.Context
+import android.media.AudioManager
 import android.media.session.MediaSessionManager
 import android.net.ConnectivityManager
 import dev.zacsweers.metro.AppScope
@@ -14,6 +15,11 @@ object ServiceProviders {
     @Provides
     fun provideMediaSessionManager(applicationContext: Context): MediaSessionManager {
         return applicationContext.getSystemService(Context.MEDIA_SESSION_SERVICE) as MediaSessionManager
+    }
+
+    @Provides
+    fun provideAudioManager(applicationContext: Context): AudioManager {
+        return applicationContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     }
 
     @Provides

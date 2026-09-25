@@ -4,71 +4,87 @@ import android.os.Build
 import android.util.JsonWriter
 import java.io.StringWriter
 
-private const val DEVICE_NAME = "MediaSession2MQTT"
+/**
+ * Home Assistant device grouping all the sensors.
+ */
+class DeviceInfo(
+    val name: String,
+    val identifier: String
+)
 
-private fun JsonWriter.writeDeviceInfo(deviceId: Int) {
+private fun JsonWriter.writeDeviceInfo(deviceInfo: DeviceInfo) {
     beginObject()
 
     name("name")
-    value("$DEVICE_NAME $deviceId")
+    value(deviceInfo.name)
     name("manufacturer")
     value(Build.MANUFACTURER)
     name("model")
     value(Build.MODEL)
     name("identifiers")
     beginArray()
-    value("${DEVICE_NAME}_$deviceId")
+    value(deviceInfo.identifier)
     endArray()
 
     endObject()
 }
 
 private fun JsonWriter.writeSensor(
-    deviceId: Int,
-    sensorName: String,
+    deviceInfo: DeviceInfo,
+    sensor: Sensor,
     sensorUniqueId: String,
-    sensorIcon: String,
     sensorTopic: String,
-    sensorDeviceClass: String?,
-    sensorUnitOfMeasurement: String?
+    availabilityTopic: String
 ) {
     beginObject()
 
     name("name")
-    value(sensorName)
+    value(sensor.name)
     name("unique_id")
     value(sensorUniqueId)
     name("icon")
-    value(sensorIcon)
+    value(sensor.icon)
     name("state_topic")
     value(sensorTopic)
+    name("availability_topic")
+    value(availabilityTopic)
     name("device")
-    writeDeviceInfo(deviceId)
-    name("device")
-    writeDeviceInfo(deviceId)
-    sensorDeviceClass?.let {
+    writeDeviceInfo(deviceInfo)
+    sensor.deviceClass?.let {
         name("device_class")
         value(it)
     }
-    sensorUnitOfMeasurement?.let {
+    sensor.unitOfMeasurement?.let {
         name("unit_of_measurement")
+        value(it)
+    }
+    sensor.payloadOn?.let {
+        name("payload_on")
+        value(it)
+    }
+    sensor.payloadOff?.let {
+        name("payload_off")
         value(it)
     }
 
     endObject()
 }
 
-fun createSensorDiscoveryConfiguration(deviceId: Int, sensor: Sensor, sensorTopic: String): String {
+fun createSensorDiscoveryConfiguration(
+    deviceInfo: DeviceInfo,
+    sensor: Sensor,
+    sensorUniqueId: String,
+    sensorTopic: String,
+    availabilityTopic: String
+): String {
     val writer = StringWriter()
     JsonWriter(writer).use {
         it.writeSensor(
-            deviceId = deviceId,
-            sensorName = sensor.name,
-            sensorUniqueId = sensor.getUniqueId(deviceId),
-            sensorIcon = sensor.icon,
+            deviceInfo = deviceInfo,
+            sensor = sensor,
+            sensorUniqueId = sensorUniqueId,
             sensorTopic = sensorTopic,
-            sensorDeviceClass = sensor.deviceClass,
-            sensorUnitOfMeasurement = sensor.unitOfMeasurement
+            availabilityTopic = availabilityTopic
         )
     }
     return writer.toString()

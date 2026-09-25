@@ -85,6 +85,18 @@ After typing the command, it's recommended to restart the device to make sure th
 
 As soon as the app configuration screen shows "Actively listening to MediaSessions" and the MQTT connection test was successful, you're good to go!
 
+### Enabling the audio playback fallback (optional)
+
+Some applications (for example IPTV players) play media without publishing a MediaSession.
+To detect them, MediaSession2MQTT listens to the system audio playback events and identifies the application in the foreground at that moment.
+This requires the usage stats access, which can only be granted using ADB:
+
+```
+adb shell appops set be.digitalia.mediasession2mqtt GET_USAGE_STATS allow
+```
+
+Without this authorization, audio playback is still detected but the application is reported as unknown.
+
 ### Extra step for TCL televisions
 
 Android TV devices manufactured by TCL come with a software called _Safety Guard_ which prevents apps from automatically starting background services on boot unless they are manually given a specific authorization. Without this authorization, MediaSession2MQTT will not be able to monitor the MediaSessions after rebooting the device.
@@ -112,6 +124,9 @@ After rebooting your TCL TV, you should see the session status being updated on 
 ## Home Assistant MQTT Discovery
 
 This app provides an integration for Home Assistant since version 1.1.0. Check the box "Enable Home Assistant integration" in the settings screen and the MQTT Discovery configuration will also be published, allowing Home Assistant to detect and configure MediaSession2MQTT as a new device automatically.
+
+When a topic prefix is configured (e.g. `androidtv/bedroom`), the Home Assistant device is named after its last segment (e.g. `bedroom`), which creates entities like `binary_sensor.bedroom_media_active`.
+All entities use the availability topic and become unavailable when the device is disconnected.
 
 ## The MQTT API
 
@@ -154,6 +169,32 @@ Note that many applications don't report any title, for example: Netflix, Disney
 ### mediaSession/{deviceId}/mediaDuration
 
 The duration of the currently playing or paused media in milliseconds, or an empty String (`""`) if no media is currently playing or paused or the duration is unavailable.
+
+## The unified media API
+
+In addition to the topics above, the application publishes a unified media state combining two detection methods:
+
+1. If a MediaSession is playing, it is used (method `mediasession`).
+2. Otherwise, if media audio is playing, the application in the foreground is reported (method `audio_callback`). Audio played while a home screen application is in the foreground (e.g. launcher trailers) is ignored.
+3. Otherwise, if a MediaSession is paused, it is reported as paused.
+4. Otherwise, the state is `idle`.
+
+Short interruptions are ignored: leaving the `playing` state is only reported after 5 seconds (e.g. when changing channels in an IPTV application).
+
+These topics are published under the topic prefix configured in the settings, or `mediaSession/{deviceId}` if none is configured. All messages are retained.
+
+| Topic | Values |
+|---|---|
+| `{prefix}/status` | `online` or `offline` (last will, published by the broker when the connection is lost) |
+| `{prefix}/media/active` | `ON` when media is playing, `OFF` otherwise |
+| `{prefix}/media/state` | `playing`, `paused` or `idle` |
+| `{prefix}/media/package` | Android application id, or `""` |
+| `{prefix}/media/app` | Application name, or `""` |
+| `{prefix}/media/title` | Media title, or `""` if unavailable |
+| `{prefix}/media/artist` | Media artist, or `""` if unavailable |
+| `{prefix}/media/method` | `mediasession`, `audio_callback` or `none` |
+
+To allow the broker to detect lost connections, the MQTT connection uses a keep-alive of 120 seconds when publishing.
 
 ## A note about the Netflix app
 

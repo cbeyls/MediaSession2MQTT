@@ -36,6 +36,7 @@
         <item>2</item>
     </string-array>
     <string name="settings_device_id">Device id</string>
+    <string name="settings_topic_prefix">Topic prefix (e.g. androidtv/chambre)</string>
 
     <string name="settings_info">Info</string>
     <string name="settings_status">Status</string>

@@ -57,6 +57,10 @@
             android:inputType="number"
             android:key="device_id"
             android:title="@string/settings_device_id" />
+        <EditTextPreference
+            android:inputType="textNoSuggestions"
+            android:key="topic_prefix"
+            android:title="@string/settings_topic_prefix" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/settings_info">

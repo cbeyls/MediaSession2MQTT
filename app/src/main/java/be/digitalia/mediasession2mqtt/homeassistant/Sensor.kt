@@ -6,12 +6,12 @@ class Sensor(
     val icon: String,
     val subTopic: String,
     val deviceClass: String? = null,
-    val unitOfMeasurement: String? = null
+    val unitOfMeasurement: String? = null,
+    val type: String = "sensor",
+    val payloadOn: String? = null,
+    val payloadOff: String? = null
 ) {
-    val type: String
-        get() = "sensor"
-
-    fun getUniqueId(deviceId: Int): String {
-        return "mediasession_${deviceId}_$serializedName"
+    fun getUniqueId(uniqueIdPrefix: String): String {
+        return "${uniqueIdPrefix}_$serializedName"
     }
 }
