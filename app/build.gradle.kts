@@ -33,6 +33,7 @@ android {
                         "kotlin-tooling-metadata.json",
                         "kotlin/**",
                         "META-INF/*.version",
+                        "META-INF/androidx/**",
                         "META-INF/dev/zacsweers/metro/**",
                         "META-INF/versions/**",
                         "META-INF/NOTICE.md"
