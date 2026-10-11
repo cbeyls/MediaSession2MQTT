@@ -1,6 +1,15 @@
 Change Log
 ==========
 
+## Version 1.1.6
+
+_2026-10-11_
+
+- Fix: improve network error detection and recovery
+- Enhancement: monitor device connectivity and restart process when regaining connectivity (thanks to @phoenixxx-1 for the idea and testing) 
+- Enhancement: only report playback position on state changes or drift during playback (with the help of @phoenixxx-1)
+- Upgrade internal libraries.
+
 ## Version 1.1.5
 
 _2026-07-19_

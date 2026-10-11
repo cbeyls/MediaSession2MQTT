@@ -28,13 +28,13 @@ For ADB, you first need to enable ADB debugging in the developer options of the 
 
 ```
 adb connect [IP address of your TV]
-adb install ./mediasession2mqtt-1.1.5.apk
+adb install ./mediasession2mqtt-1.1.6.apk
 ```
 
 or for an upgrade:
 
 ```
-adb install -r ./mediasession2mqtt-1.1.5.apk
+adb install -r ./mediasession2mqtt-1.1.6.apk
 ```
 
 ## Configuration
