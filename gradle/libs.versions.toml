@@ -1,5 +1,6 @@
 [versions]
 androidGradlePlugin = "9.3.1"
+androidxAnnotation = "1.11.0"
 kmqtt = "1.0.0"
 kotlin = "2.4.10"
 kotlinx-coroutines = "1.11.0"
@@ -10,6 +11,7 @@ android-application = { id = "com.android.application", version.ref = "androidGr
 metro = { id = "dev.zacsweers.metro", version.ref = "metro" }
 
 [libraries]
+androidx-annotation = { group = "androidx.annotation", name = "annotation", version.ref = "androidxAnnotation" }
 kmqtt-common = { group = "io.github.davidepianca98", name = "kmqtt-common-jvm", version.ref = "kmqtt" }
 kmqtt-client = { group = "io.github.davidepianca98", name = "kmqtt-client-jvm", version.ref = "kmqtt" }
 kotlin-gradle-plugin = { group = "org.jetbrains.kotlin", "name" = "kotlin-gradle-plugin", version.ref = "kotlin" }
