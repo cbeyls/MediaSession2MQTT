@@ -6,6 +6,8 @@
     <string name="settings_enabled">Enabled</string>
     <string name="settings_hass_integration_enabled">Enable Home Assistant integration</string>
     <string name="settings_hass_integration_enabled_summary">Publish MQTT Discovery configuration</string>
+    <string name="settings_ignore_when_screen_off">Ignore sessions when screen is off</string>
+    <string name="settings_ignore_when_screen_off_summary">Report an idle state while the display is off</string>
 
     <string name="settings_server_connection">MQTT server connection</string>
     <string name="settings_protocol_version">Protocol version</string>

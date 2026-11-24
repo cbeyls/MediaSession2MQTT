@@ -12,6 +12,12 @@
             android:key="hass_integration_enabled"
             android:summary="@string/settings_hass_integration_enabled_summary"
             android:title="@string/settings_hass_integration_enabled" />
+
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="ignore_when_screen_off"
+            android:summary="@string/settings_ignore_when_screen_off_summary"
+            android:title="@string/settings_ignore_when_screen_off" />
     </PreferenceCategory>
 
     <PreferenceCategory
