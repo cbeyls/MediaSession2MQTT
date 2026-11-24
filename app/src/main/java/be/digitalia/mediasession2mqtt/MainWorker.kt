@@ -1,8 +1,10 @@
 package be.digitalia.mediasession2mqtt
 
 import android.content.Context
+import android.media.session.MediaController
 import android.media.session.PlaybackState
 import be.digitalia.mediasession2mqtt.connectivity.ConnectivityChecker
+import be.digitalia.mediasession2mqtt.display.ScreenStateMonitor
 import be.digitalia.mediasession2mqtt.homeassistant.Sensor
 import be.digitalia.mediasession2mqtt.homeassistant.createSensorDiscoveryConfiguration
 import be.digitalia.mediasession2mqtt.mediasession.CurrentMediaControllerDetector
@@ -44,20 +46,36 @@ import kotlin.math.abs
 class MainWorker(
     private val context: Context,
     private val currentMediaControllerDetector: CurrentMediaControllerDetector,
+    private val screenStateMonitor: ScreenStateMonitor,
     private val connectivityChecker: ConnectivityChecker,
     private val settingsProvider: SettingsProvider,
     private val mqttClientFactory: MQTTPublishClient.Factory,
 ) {
     private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val effectiveMediaControllerFlow: Flow<MediaController?> =
+        settingsProvider.isIgnoreWhenScreenOffEnabled.flatMapLatest { ignoreWhenScreenOff ->
+            if (ignoreWhenScreenOff) {
+                combine(
+                    currentMediaControllerDetector.currentMediaController,
+                    screenStateMonitor.isScreenOnFlow
+                ) { mediaController, isScreenOn ->
+                    if (isScreenOn) mediaController else null
+                }
+            } else {
+                currentMediaControllerDetector.currentMediaController
+            }
+        }.distinctUntilChanged()
+
     private val applicationIdFlow: Flow<String> =
-        currentMediaControllerDetector.currentMediaController.map { mediaController ->
+        effectiveMediaControllerFlow.map { mediaController ->
             mediaController?.packageName.orEmpty()
         }.distinctUntilChanged()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val playbackStateFlow: Flow<MQTTPlaybackState> =
-        currentMediaControllerDetector.currentMediaController.flatMapLatest { mediaController ->
+        effectiveMediaControllerFlow.flatMapLatest { mediaController ->
             when (mediaController) {
                 null -> flowOf(MQTTPlaybackState.Idle)
                 else -> mediaController.playbackStateFlow
@@ -73,7 +91,7 @@ class MainWorker(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val mediaMetadataFlow: Flow<MQTTMediaMetadata> =
-        currentMediaControllerDetector.currentMediaController.flatMapLatest { mediaController ->
+        effectiveMediaControllerFlow.flatMapLatest { mediaController ->
             when (mediaController) {
                 null -> flowOf(MQTTMediaMetadata())
                 else -> mediaController.metadataFlow
